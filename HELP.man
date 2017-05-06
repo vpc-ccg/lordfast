@@ -1,0 +1,71 @@
+.TH lordFAST 1 "Last Updated: Apr 08, 2015" lordFAST "lordfast Manual"
+.SH NAME
+lordfast
+.SH DESCRIPTION
+lordFAST is a sensitive tool for mapping long reads with high error rates. lordFAST is specially designed for aligning reads from PacBio sequencing technology but provides the user the ability to change alignment parameters depending on the reads and application.
+
+.SH INSTALLATION
+To install lordFAST, please download the source code from 
+.br
+https://github.com/vpc-ccg/lordfast
+.br
+or alternatively clone the repository by running the following command:
+.br
+$ git clone https://github.com/vpc-ccg/lordfast.git
+
+.br
+Now the code can be compiled easily by running "make" command line which builds the binary file "lordfast".
+.br
+$ cd lordfast
+.br
+$ make
+
+.SH SYNOPSIS
+lordfast --index [file] [OPTIONS]
+.br
+lordfast --search [index] --seq [file] [OPTIONS]
+.SH OPTIONS
+.SS GENERAL OPTIONS
+.TP
+.B
+-h, --help
+Prints this help file.
+.TP
+.B
+-v, --version
+Prints the version of software.
+
+.SS MAPPING OPTIONS
+.TP
+.BI --threads " t"
+Use 
+.I t
+number of cores for mapping the sequences (default: 1). Use
+.I 0
+to use all the available cores in the system.
+
+.SH EXAMPLES
+
+Indexing reference genome:
+.br
+$ ./lordfast --index refgen.fasta
+
+Mapping to the reference genome:
+.br
+$ ./lordfast --search refgen.fa --seq reads.fastq > map.sam
+.br
+$ ./lordfast --search refgen.fa --seq reads.fastq --threads 4 > map.sam
+
+.SH BUGS
+Please report the bugs through lordfast's web page at 
+.br
+https://github.com/vpc-ccg/lordfast
+
+.SH Author
+Ehsan Haghshenas (ehaghshe@sfu.ca)
+.br
+Faraz Hach (fhach@sfu.ca)
+
+.SH COPYRIGHT
+
+Copyright (c) <2015-2020>, Simon Fraser University All rights reserved.

@@ -1,0 +1,8 @@
+.DS_Store
+lordfast
+gmon.out
+HELP
+src/*.o
+src/bwa/*.o
+src/clasp/*.o
+src/edlib/*.o
