@@ -627,6 +627,21 @@ void bwt_get_intv_info(uint64_t beg, uint64_t end, char **chr_name, int32_t *chr
 	*chr_len = _fmd_index->bns->anns[rid].len;
 }
 
+void bwt_get_chr_boundaries(uint64_t beg, uint64_t end, uint32_t *chr_beg, uint32_t *chr_end)
+{
+	int rid;
+	uint64_t mid = (beg + end) >> 1;
+	rid = bns_pos2rid(_fmd_index->bns, mid);
+
+	*chr_beg = _fmd_index->bns->anns[rid].offset;
+	*chr_end = _fmd_index->bns->anns[rid].offset + _fmd_index->bns->anns[rid].len - 1;
+
+	// fprintf(stderr, "chrName: %s\n", _fmd_index->bns->anns[rid].name);
+	// fprintf(stderr, "chrLen: %s\n", _fmd_index->bns->anns[rid].len);
+	// fprintf(stderr, " chrBeg: %s\n", *chr_beg);
+	// fprintf(stderr, " chrEnd: %s\n", *chr_end);
+}
+
 void printSamHeader(FILE *fp)
 {
 	int i;

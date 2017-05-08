@@ -819,6 +819,10 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 		alignChain(_pf_topChains[id].list[0], query, rLen, map);
 	}
 
+	// fprintf(stderr, "win %u %u\n", win.tStart, win.tEnd);
+	// fprintf(stderr, "chain %u %u\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen-1].tPos);
+	// bwt_get_chr_boundaries(win.tStart, win.tEnd);
+
 	// fprintf(stderr, "\nSelected seeds\n");
 	// for(i = 0; i < _pf_seedsSelected[id].num; i++)
 	// 	fprintf(stderr, "   %u %u %u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
@@ -1225,6 +1229,12 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 	int tmpNum;
 	int numDigits;
 
+	uint32_t chrBeg, chrEnd;
+	bwt_get_chr_boundaries(chain.seeds[0].tPos, chain.seeds[chain.chainLen-1].tPos, &chrBeg, &chrEnd);
+
+	// fprintf(stderr, "chain %u %u\n", chain.seeds[0].tPos, chain.seeds[chain.chainLen-1].tPos);
+	// fprintf(stderr, "chr %u %u\n", chrBeg, chrEnd);
+
 	// // print query
 	// fprintf(stderr, "query:\t%s\n", query);
 	// // print reference
@@ -1240,35 +1250,52 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
 	// extend before first seed
 	readAlnLen = chain.seeds[0].qPos;
+	refAlnLen = readAlnLen + 20; // TODO: how much extra sequence?
 	if(readAlnLen > 0)
 	{
-		reverseComplete(query, readAlnSeq, readAlnLen);
+		if(chain.seeds[0].tPos - refAlnLen >= chrBeg)
+		{
+			reverseComplete(query, readAlnSeq, readAlnLen);
 
-		refAlnLen = readAlnLen + 20; // TODO: how much extra sequence?
-		refAlnStart = chain.seeds[0].tPos - refAlnLen;
-		bwt_str_pac2char(refAlnStart, refAlnLen, tmpAlnSeq);
-		reverseComplete(tmpAlnSeq, refAlnSeq, refAlnLen);
+			refAlnStart = chain.seeds[0].tPos - refAlnLen;
+			bwt_str_pac2char(refAlnStart, refAlnLen, tmpAlnSeq);
+			reverseComplete(tmpAlnSeq, refAlnSeq, refAlnLen);
 
-		// TODO: is -1 OK?
-		edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
-		alnScore -= edResult.editDistance;
+			// TODO: is -1 OK?
+			edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
+			alnScore -= edResult.editDistance;
 
-		edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+			edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
 
-		// if( qLen < readAlnLen - 1)
-		// {
-		// 	edCigar->push_front('S');
-		// 	// Write number of moves to cigar string.
-		// 	tmpNum = readAlnLen - 1 - qLen;
-		// 	for (; tmpNum; tmpNum /= 10)
-		// 	{
-		// 		edCigar->push_front('0' + tmpNum % 10);
-		// 	}
-		// }
+			// if( qLen < readAlnLen - 1)
+			// {
+			// 	edCigar->push_front('S');
+			// 	// Write number of moves to cigar string.
+			// 	tmpNum = readAlnLen - 1 - qLen;
+			// 	for (; tmpNum; tmpNum /= 10)
+			// 	{
+			// 		edCigar->push_front('0' + tmpNum % 10);
+			// 	}
+			// }
 
-		// fix sam pos
-		map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
-		edlibFreeAlignResult(edResult);
+			// fix sam pos
+			map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+			edlibFreeAlignResult(edResult);
+		}
+		else // not enough sequence left on the chromosome to align => soft-clip
+		{
+			// Write number of moves to cigar string.
+			tmpNum = readAlnLen;
+			numDigits = 0;
+			for (; tmpNum; tmpNum /= 10)
+			{
+				edCigar->push_back('0' + tmpNum % 10);
+				numDigits++;
+			}
+			reverse(edCigar->end() - numDigits, edCigar->end());
+			// Write code of move to cigar string.
+			edCigar->push_back('S');
+		}
 	}
 
 	for(i=0; i<chain.chainLen-1; i++)
@@ -1391,33 +1418,50 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 	// extend after last seed
 	readAlnStart = chain.seeds[i].qPos + chain.seeds[i].len;
 	readAlnLen = readLen - readAlnStart;
+	refAlnLen = readAlnLen + 20; // TODO: how much extra sequence?
 	if(readAlnLen > 0)
 	{
-		refAlnLen = readAlnLen + 20; // TODO: how much extra sequence?
-		refAlnStart = chain.seeds[i].tPos + chain.seeds[i].len;
-		bwt_str_pac2char(refAlnStart, refAlnLen, refAlnSeq);
+		if(chain.seeds[i].tPos + chain.seeds[i].len + refAlnLen - 1 <= chrEnd)
+		{
+			refAlnStart = chain.seeds[i].tPos + chain.seeds[i].len;
+			bwt_str_pac2char(refAlnStart, refAlnLen, refAlnSeq);
 
-		// TODO: is -1 OK?
-		edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
-		alnScore -= edResult.editDistance;
+			// TODO: is -1 OK?
+			edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
+			alnScore -= edResult.editDistance;
 
-		edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+			edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
 
-		// if( qLen < readAlnLen - 1)
-		// {
-		// // soutCigar << (readAlnLen - qLen) << "S";
-		// 	edCigar->push_front('S');
-		// 	// Write number of moves to cigar string.
-		// 	tmpNum = readAlnLen - 1 - qLen;
-		// 	for (; tmpNum; tmpNum /= 10)
-		// 	{
-		// 		edCigar->push_front('0' + tmpNum % 10);
-		// 	}
-		// }
+			// if( qLen < readAlnLen - 1)
+			// {
+			// // soutCigar << (readAlnLen - qLen) << "S";
+			// 	edCigar->push_front('S');
+			// 	// Write number of moves to cigar string.
+			// 	tmpNum = readAlnLen - 1 - qLen;
+			// 	for (; tmpNum; tmpNum /= 10)
+			// 	{
+			// 		edCigar->push_front('0' + tmpNum % 10);
+			// 	}
+			// }
 
-		// fix sam posEnd
-		map.posEnd = refAlnStart + edResult.endLocations[0];
-		edlibFreeAlignResult(edResult);
+			// fix sam posEnd
+			map.posEnd = refAlnStart + edResult.endLocations[0];
+			edlibFreeAlignResult(edResult);
+		}
+		else // not enough sequence left on the chromosome to align => soft-clip
+		{
+			// Write number of moves to cigar string.
+			tmpNum = readAlnLen;
+			numDigits = 0;
+			for (; tmpNum; tmpNum /= 10)
+			{
+				edCigar->push_back('0' + tmpNum % 10);
+				numDigits++;
+			}
+			reverse(edCigar->end() - numDigits, edCigar->end());
+			// Write code of move to cigar string.
+			edCigar->push_back('S');
+		}
 	}
 
 	// fprintf(stderr, "score: %d\n", alnScore);
