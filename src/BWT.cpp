@@ -294,23 +294,33 @@ void getLocs_extend_whole_step(char *qSeq, uint32_t qLen, uint32_t hash_count, S
 	bwtint_t sp_tmp, ep_tmp, occ_tmp;
 	bwtint_t sapos;
 
-	double step = (double)qLen / hash_count;
+	double step = 0;
 	double seed_pos = 0;
 	uint32_t seed_pos_int = 0;
 	uint32_t last_pos = 0;
 
 	uint32_t numForward = 0;
 	uint32_t numReverse = 0;
+
+	if(qLen - WINDOW_SIZE + 1 < hash_count)
+	{
+		step = 1;
+		hash_count = qLen - WINDOW_SIZE + 1;
+	}
+	else
+	{
+		step = (double) (qLen - WINDOW_SIZE + 1) / hash_count;
+	}
 	
 	for(i=0; i<hash_count; i++)
 	{
 		m = WINDOW_SIZE;
 		// occ = bwt_count_exact(_fmd_index->bwt, qSeq + seed_pos_int, m, &sp, &ep);
-		// fprintf(stderr, "%.*s %llu %llu %llu\n", m, qSeq + seed_pos_int, occ, sp, ep);
 		occ = bwt_count_exact_cached(_fmd_index->bwt, qSeq + seed_pos_int, m, &sp, &ep);
-		// fprintf(stderr, "%.*s %llu %llu %llu\n", m, qSeq + seed_pos_int, occ, sp, ep);
-		// while((occ_tmp = bwt_count_exact(_fmd_index->bwt, qSeq + seed_pos_int, m+1, &sp_tmp, &ep_tmp)) > 0)
-		while((occ_tmp = bwt_count_exact_cached(_fmd_index->bwt, qSeq + seed_pos_int, m+1, &sp_tmp, &ep_tmp)) > 0)
+
+		// if there are enough bases left AND there are some exact matches
+		// while(seed_pos_int + m < qLen && (occ_tmp = bwt_count_exact(_fmd_index->bwt, qSeq + seed_pos_int, m+1, &sp_tmp, &ep_tmp)) > 0)
+		while(seed_pos_int + m < qLen && (occ_tmp = bwt_count_exact_cached(_fmd_index->bwt, qSeq + seed_pos_int, m+1, &sp_tmp, &ep_tmp)) > 0)
 		{
 			occ = occ_tmp;
 			sp = sp_tmp;
