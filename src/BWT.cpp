@@ -302,14 +302,53 @@ void getLocs_extend_whole_step(char *qSeq, uint32_t qLen, uint32_t hash_count, S
 	uint32_t numForward = 0;
 	uint32_t numReverse = 0;
 
-	if(qLen - WINDOW_SIZE + 1 < hash_count)
+	// if(qLen - WINDOW_SIZE + 1 < hash_count)
+	// {
+	// 	step = 1;
+	// 	hash_count = qLen - WINDOW_SIZE + 1;
+	// }
+	// else
+	// {
+	// 	step = (double) (qLen - WINDOW_SIZE + 1) / hash_count;
+	// }
+
+	// int tmpLen = qLen - WINDOW_SIZE + 1;
+	// if(tmpLen < 2500)
+	// {
+	// 	hash_count = 250;
+	// 	step = (double) tmpLen / hash_count;
+	// }
+	// else if(tmpLen < 5000)
+	// {
+	// 	hash_count = 500;
+	// 	step = (double) tmpLen / hash_count;
+	// }
+	// else if(tmpLen < 20000)
+	// {
+	// 	hash_count = 1000;
+	// 	step = (double) tmpLen / hash_count;
+	// }
+	// else
+	// {
+	// 	hash_count = 2000;
+	// 	step = (double) tmpLen / hash_count;
+	// }
+
+	int tmpLen = qLen - WINDOW_SIZE + 1;
+	if(tmpLen < 1000)
 	{
+		hash_count = tmpLen;
 		step = 1;
-		hash_count = qLen - WINDOW_SIZE + 1;
+	}
+	else if(tmpLen < 10000)
+	{
+		hash_count = 1000;
+		step = (double) tmpLen / hash_count;
 	}
 	else
 	{
-		step = (double) (qLen - WINDOW_SIZE + 1) / hash_count;
+		hash_count = 2000;
+		step = (double) tmpLen / hash_count;
 	}
 	
 	for(i=0; i<hash_count; i++)
