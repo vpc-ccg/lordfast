@@ -789,7 +789,9 @@ void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 		for (j = i-1; j >= 0; j--)
 		{
 			// FIXME: if qPos is the same but tPos is different
-			if (lis[j] + 1 > lis[i] && anchors[j].tPos < anchors[i].tPos)
+			if (lis[j] + 1 > lis[i] && anchors[j].tPos < anchors[i].tPos && 
+				(anchors[i].tPos - anchors[j].tPos) > (anchors[i].qPos - anchors[j].qPos) * (1.0 - devRate) &&
+				(anchors[i].tPos - anchors[j].tPos) < (anchors[i].qPos - anchors[j].qPos) * (1.0 + devRate))
 			{
 				lis[i] = lis[j] + 1;
 				prev[i] = j;
