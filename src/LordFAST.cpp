@@ -323,6 +323,7 @@ void* mapSeq(void *idp)
 		// getLocs_extend_whole_step2(read->seq, readLen, SAMPLING_COUNT, _pf_seedsForward + id, _pf_seedsReverse + id);
 		// getLocs_extend_whole_step3(read->seq, readLen, SAMPLING_COUNT, _pf_seedsForward + id, _pf_seedsReverse + id);
 		// continue; // just do seeding
+
 		// reset number of top windows
 		_pf_topWins[id].num = 0;
 		findTopWins(readLen, _pf_seedsForward + id, 0, t, id); //find candidate paths for forward
@@ -331,7 +332,7 @@ void* mapSeq(void *idp)
 		// sort the windows based on the score!
 		std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
 
-		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+		fprintf(stderr, ">%s length:%d\n", read->name, readLen);
 		// continue; // seeding and candidate selection
 
 		float scoreRatio = 2;
@@ -480,6 +481,11 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 			}
 		}
 
+		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		// {
+		// 	fprintf(stderr, "\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		// }
+
 		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		retScore = _pf_topChains[id].list[0].score;
 	}
@@ -493,6 +499,11 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 				_pf_seedsSelected[id].list[_pf_seedsSelected[id].num++] = _pf_seedsForward[id].list[i];
 			}
 		}
+
+		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		// {
+		// 	fprintf(stderr, "\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		// }
 
 		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		retScore = _pf_topChains[id].list[0].score;
@@ -757,6 +768,52 @@ bool compareSam(const Sam_t& s1, const Sam_t& s2)
 	return s1.alnScore > s2.alnScore;
 }
 
+// finds the longest increasing subsequence in O(n^2)
+void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
+{
+	int i, j;
+	int32_t lis[numAnchors];
+	int32_t prev[numAnchors];
+	int lisLen = 1;
+	int lisEnd = 0;
+	float devRate = 0.3;
+
+	lis[0] = 1;
+	prev[0] = -1;
+
+	for(i = 0; i < numAnchors; i++)
+	{
+		lis[i] = 1;
+		prev[i] = -1;
+
+		for (j = i-1; j >= 0; j--)
+		{
+			// FIXME: if qPos is the same but tPos is different
+			if (lis[j] + 1 > lis[i] && anchors[j].tPos < anchors[i].tPos)
+			{
+				lis[i] = lis[j] + 1;
+				prev[i] = j;
+			}
+		}
+
+		if (lis[i] > lisLen)
+		{
+			lisEnd = i;
+			lisLen = lis[i];
+		}
+	}
+
+	// print LIS
+	int curr = lisEnd;
+	int idx = lisLen - 1;
+	bestChain.chainLen = lisLen;
+	while(curr >= 0)
+	{
+		bestChain.seeds[idx--] = anchors[curr];
+		curr = prev[curr];
+	}
+}
+
 /**********************************************/
 void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &map, int id)
 {
@@ -779,6 +836,12 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
+		fprintf(stderr, "@@@\n");
+		for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		{
+			fprintf(stderr, "\tgoood\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		}
+
 		if(seedPos_Low > 2000000000)
 			for(i = 0; i < _pf_seedsSelected[id].num; i++)
 				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
@@ -790,7 +853,13 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
 				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 
-		alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
+		fprintf(stderr, "===\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tchain\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
+
+		// alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
 	}
 	else
 	{
@@ -805,6 +874,12 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
+		fprintf(stderr, "@@@\n");
+		for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		{
+			fprintf(stderr, "\tgoood\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		}
+
 		if(seedPos_Low > 2000000000)
 			for(i = 0; i < _pf_seedsSelected[id].num; i++)
 				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
@@ -815,8 +890,22 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 		if(seedPos_Low > 2000000000)
 			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
 				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+
+		fprintf(stderr, "===\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tchain\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
+
+		findLIS(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+
+		fprintf(stderr, "+++\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tliiis\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
 		
-		alignChain(_pf_topChains[id].list[0], query, rLen, map);
+		// alignChain(_pf_topChains[id].list[0], query, rLen, map);
 	}
 
 	// fprintf(stderr, "win %u %u\n", win.tStart, win.tEnd);
