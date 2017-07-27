@@ -781,14 +781,60 @@ void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 	lis[0] = 1;
 	prev[0] = -1;
 
-	for(i = 0; i < numAnchors; i++)
+	for(i = 1; i < numAnchors; i++)
 	{
 		lis[i] = 1;
 		prev[i] = -1;
 
 		for (j = i-1; j >= 0; j--)
 		{
-			// FIXME: if qPos is the same but tPos is different
+			if (lis[j] + 1 > lis[i] && anchors[j].tPos < anchors[i].tPos && 
+				(anchors[i].tPos - anchors[j].tPos) > (anchors[i].qPos - anchors[j].qPos) * (1.0 - devRate) &&
+				(anchors[i].tPos - anchors[j].tPos) < (anchors[i].qPos - anchors[j].qPos) * (1.0 + devRate))
+			{
+				lis[i] = lis[j] + 1;
+				prev[i] = j;
+			}
+		}
+
+		if (lis[i] > lisLen)
+		{
+			lisEnd = i;
+			lisLen = lis[i];
+		}
+	}
+
+	// print LIS
+	int curr = lisEnd;
+	int idx = lisLen - 1;
+	bestChain.chainLen = lisLen;
+	while(curr >= 0)
+	{
+		bestChain.seeds[idx--] = anchors[curr];
+		curr = prev[curr];
+	}
+}
+
+// finds the longest decreasing subsequence in O(n^2)
+void findLIS_rev(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
+{
+	int i, j;
+	int32_t lis[numAnchors];
+	int32_t prev[numAnchors];
+	int lisLen = 1;
+	int lisEnd = 0;
+	float devRate = 0.3;
+
+	lis[numAnchors - 1] = 1;
+	prev[numAnchors - 1] = -1;
+
+	for(i = numAnchors - 2; i >= 0; i--)
+	{
+		lis[i] = 1;
+		prev[i] = -1;
+
+		for (j = i+1; j < numAnchors; j++)
+		{
 			if (lis[j] + 1 > lis[i] && anchors[j].tPos < anchors[i].tPos && 
 				(anchors[i].tPos - anchors[j].tPos) > (anchors[i].qPos - anchors[j].qPos) * (1.0 - devRate) &&
 				(anchors[i].tPos - anchors[j].tPos) < (anchors[i].qPos - anchors[j].qPos) * (1.0 + devRate))
@@ -859,6 +905,14 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
 		{
 			fprintf(stderr, "\tchain\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
+
+		findLIS_rev(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+
+		fprintf(stderr, "---\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tliiis\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
 		}
 
 		// alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
