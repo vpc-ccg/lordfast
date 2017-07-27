@@ -332,7 +332,7 @@ void* mapSeq(void *idp)
 		// sort the windows based on the score!
 		std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
 
-		fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
 		// continue; // seeding and candidate selection
 
 		float scoreRatio = 2;
@@ -769,6 +769,7 @@ bool compareSam(const Sam_t& s1, const Sam_t& s2)
 }
 
 // finds the longest increasing subsequence in O(n^2)
+// assumes the numbers are sorted in increasing order! Process from first to last
 void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 {
 	int i, j;
@@ -788,7 +789,10 @@ void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 
 		for (j = i-1; j >= 0; j--)
 		{
-			if (lis[j] + 1 > lis[i] && anchors[j].tPos < anchors[i].tPos && 
+			if (lis[j] + 1 > lis[i] && 
+				anchors[j].tPos < anchors[i].tPos && 
+				// anchors[j].tPos + anchors[j].len <= anchors[i].tPos && 
+				// anchors[j].qPos + anchors[j].len <= anchors[i].qPos && 
 				(anchors[i].tPos - anchors[j].tPos) > (anchors[i].qPos - anchors[j].qPos) * (1.0 - devRate) &&
 				(anchors[i].tPos - anchors[j].tPos) < (anchors[i].qPos - anchors[j].qPos) * (1.0 + devRate))
 			{
@@ -815,7 +819,8 @@ void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 	}
 }
 
-// finds the longest decreasing subsequence in O(n^2)
+// finds the longest increasing subsequence in O(n^2)
+// assumes the numbers are sorted in decreasing order! Process from last to first
 void findLIS_rev(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 {
 	int i, j;
@@ -835,7 +840,10 @@ void findLIS_rev(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 
 		for (j = i+1; j < numAnchors; j++)
 		{
-			if (lis[j] + 1 > lis[i] && anchors[j].tPos < anchors[i].tPos && 
+			if (lis[j] + 1 > lis[i] && 
+				anchors[j].tPos < anchors[i].tPos && 
+				// anchors[j].tPos + anchors[j].len <= anchors[i].tPos && 
+				// anchors[j].qPos + anchors[j].len <= anchors[i].qPos && 
 				(anchors[i].tPos - anchors[j].tPos) > (anchors[i].qPos - anchors[j].qPos) * (1.0 - devRate) &&
 				(anchors[i].tPos - anchors[j].tPos) < (anchors[i].qPos - anchors[j].qPos) * (1.0 + devRate))
 			{
@@ -860,6 +868,32 @@ void findLIS_rev(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 		bestChain.seeds[idx--] = anchors[curr];
 		curr = prev[curr];
 	}
+}
+
+// For now just add the first of overlapping anchors => don't look at the size of anchor
+// FIXME: what if three anchors overlap?
+void LIS2Chain(Chain_t &chainIn, Chain_t &chainOut)
+{
+	int i;
+	int n = 0;
+
+	chainOut.score = 0;
+
+	// add the first anchor
+	chainOut.seeds[n++] = chainIn.seeds[0];
+	chainOut.score += chainIn.seeds[0].len;
+	// check other anchors
+	for(i = 1; i < chainIn.chainLen; i++)
+	{
+		if(chainIn.seeds[n-1].qPos + chainIn.seeds[n-1].len <= chainIn.seeds[i].qPos && 
+			chainIn.seeds[n-1].tPos + chainIn.seeds[n-1].len <= chainIn.seeds[i].tPos)
+		{
+			chainOut.seeds[n++] = chainIn.seeds[i];
+			chainOut.score += chainIn.seeds[i].len;
+		}
+	}
+
+	chainOut.chainLen = n;
 }
 
 /**********************************************/
@@ -884,38 +918,40 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
-		fprintf(stderr, "@@@\n");
-		for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		{
-			fprintf(stderr, "\tgoood\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
-		}
+		// fprintf(stderr, "@@@\n");
+		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		// {
+		// 	fprintf(stderr, "\tgoood\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		// }
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_seedsSelected[id].num; i++)
-				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
+		// if(seedPos_Low > 2000000000)
+		// 	for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		// 		_pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		_pf_topChains[id].num = 1;
+		// clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		// _pf_topChains[id].num = 1;
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+		// if(seedPos_Low > 2000000000)
+		// 	for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		// 		_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 
-		fprintf(stderr, "===\n");
-		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		{
-			fprintf(stderr, "\tchain\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		}
+		// fprintf(stderr, "===\n");
+		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		// {
+		// 	fprintf(stderr, "\tchain\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		// }
 
-		findLIS_rev(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		findLIS_rev(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
+		// _pf_topChains[id].num = 1;
+		LIS2Chain(_pf_topChains[id].list[1], _pf_topChains[id].list[0]);
 
-		fprintf(stderr, "---\n");
-		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		{
-			fprintf(stderr, "\tliiis\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		}
+		// fprintf(stderr, "---\n");
+		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		// {
+		// 	fprintf(stderr, "\tliiis\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		// }
 
-		// alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
+		alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
 	}
 	else
 	{
@@ -930,38 +966,40 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
-		fprintf(stderr, "@@@\n");
-		for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		{
-			fprintf(stderr, "\tgoood\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
-		}
+		// fprintf(stderr, "@@@\n");
+		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		// {
+		// 	fprintf(stderr, "\tgoood\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		// }
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_seedsSelected[id].num; i++)
-				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
+		// if(seedPos_Low > 2000000000)
+		// 	for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		// 		_pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		_pf_topChains[id].num = 1;
+		// clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		// _pf_topChains[id].num = 1;
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+		// if(seedPos_Low > 2000000000)
+		// 	for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		// 		_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 
-		fprintf(stderr, "===\n");
-		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		{
-			fprintf(stderr, "\tchain\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		}
+		// fprintf(stderr, "===\n");
+		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		// {
+		// 	fprintf(stderr, "\tchain\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		// }
 
-		findLIS(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		findLIS(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
+		// _pf_topChains[id].num = 1;
+		LIS2Chain(_pf_topChains[id].list[1], _pf_topChains[id].list[0]);
 
-		fprintf(stderr, "+++\n");
-		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		{
-			fprintf(stderr, "\tliiis\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		}
+		// fprintf(stderr, "+++\n");
+		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		// {
+		// 	fprintf(stderr, "\tliiis\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		// }
 		
-		// alignChain(_pf_topChains[id].list[0], query, rLen, map);
+		alignChain(_pf_topChains[id].list[0], query, rLen, map);
 	}
 
 	// fprintf(stderr, "win %u %u\n", win.tStart, win.tEnd);
