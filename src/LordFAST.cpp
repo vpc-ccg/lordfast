@@ -332,7 +332,7 @@ void* mapSeq(void *idp)
 		// sort the windows based on the score!
 		std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
 
-		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+		fprintf(stderr, ">%s length:%d\n", read->name, readLen);
 		// continue; // seeding and candidate selection
 
 		float scoreRatio = 2;
@@ -885,8 +885,8 @@ void LIS2Chain(Chain_t &chainIn, Chain_t &chainOut)
 	// check other anchors
 	for(i = 1; i < chainIn.chainLen; i++)
 	{
-		if(chainIn.seeds[n-1].qPos + chainIn.seeds[n-1].len <= chainIn.seeds[i].qPos && 
-			chainIn.seeds[n-1].tPos + chainIn.seeds[n-1].len <= chainIn.seeds[i].tPos)
+		if(chainOut.seeds[n-1].qPos + chainOut.seeds[n-1].len <= chainIn.seeds[i].qPos && 
+			chainOut.seeds[n-1].tPos + chainOut.seeds[n-1].len <= chainIn.seeds[i].tPos)
 		{
 			chainOut.seeds[n++] = chainIn.seeds[i];
 			chainOut.score += chainIn.seeds[i].len;
@@ -918,38 +918,38 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
-		// fprintf(stderr, "@@@\n");
-		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		// {
-		// 	fprintf(stderr, "\tgoood\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
-		// }
+		fprintf(stderr, "@@@\n");
+		for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		{
+			fprintf(stderr, "\tgoood\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		}
 
-		// if(seedPos_Low > 2000000000)
-		// 	for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		// 		_pf_seedsSelected[id].list[i].tPos -= 2000000000;
+		if(seedPos_Low > 2000000000)
+			for(i = 0; i < _pf_seedsSelected[id].num; i++)
+				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		// clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		// _pf_topChains[id].num = 1;
+		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		_pf_topChains[id].num = 1;
 
-		// if(seedPos_Low > 2000000000)
-		// 	for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// 		_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+		if(seedPos_Low > 2000000000)
+			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 
-		// fprintf(stderr, "===\n");
-		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// {
-		// 	fprintf(stderr, "\tchain\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		// }
+		fprintf(stderr, "===\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tchain\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
 
 		findLIS_rev(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
 		// _pf_topChains[id].num = 1;
 		LIS2Chain(_pf_topChains[id].list[1], _pf_topChains[id].list[0]);
 
-		// fprintf(stderr, "---\n");
-		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// {
-		// 	fprintf(stderr, "\tliiis\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		// }
+		fprintf(stderr, "---\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tliiis\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
 
 		alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
 	}
@@ -966,38 +966,38 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
-		// fprintf(stderr, "@@@\n");
-		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		// {
-		// 	fprintf(stderr, "\tgoood\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
-		// }
+		fprintf(stderr, "@@@\n");
+		for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		{
+			fprintf(stderr, "\tgoood\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		}
 
-		// if(seedPos_Low > 2000000000)
-		// 	for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		// 		_pf_seedsSelected[id].list[i].tPos -= 2000000000;
+		if(seedPos_Low > 2000000000)
+			for(i = 0; i < _pf_seedsSelected[id].num; i++)
+				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		// clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		// _pf_topChains[id].num = 1;
+		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		_pf_topChains[id].num = 1;
 
-		// if(seedPos_Low > 2000000000)
-		// 	for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// 		_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+		if(seedPos_Low > 2000000000)
+			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 
-		// fprintf(stderr, "===\n");
-		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// {
-		// 	fprintf(stderr, "\tchain\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		// }
+		fprintf(stderr, "===\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tchain\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
 
 		findLIS(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
 		// _pf_topChains[id].num = 1;
 		LIS2Chain(_pf_topChains[id].list[1], _pf_topChains[id].list[0]);
 
-		// fprintf(stderr, "+++\n");
-		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// {
-		// 	fprintf(stderr, "\tliiis\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		// }
+		fprintf(stderr, "+++\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tliiis\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
 		
 		alignChain(_pf_topChains[id].list[0], query, rLen, map);
 	}
