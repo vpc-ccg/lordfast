@@ -332,7 +332,7 @@ void* mapSeq(void *idp)
 		// sort the windows based on the score!
 		std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
 
-		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+		fprintf(stderr, ">%s length:%d\n", read->name, readLen);
 		// continue; // seeding and candidate selection
 
 		float scoreRatio = 2;
@@ -770,7 +770,7 @@ bool compareSam(const Sam_t& s1, const Sam_t& s2)
 
 // finds the longest increasing subsequence in O(n^2)
 // assumes the numbers are sorted in increasing order! Process from first to last
-void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
+void findLIS_n2(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 {
 	int i, j;
 	int32_t lis[numAnchors];
@@ -808,7 +808,7 @@ void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 		}
 	}
 
-	// print LIS
+	// store LIS
 	int curr = lisEnd;
 	int idx = lisLen - 1;
 	bestChain.chainLen = lisLen;
@@ -819,9 +819,122 @@ void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 	}
 }
 
+// finds the longest increasing subsequence in O(n long(n))
+// assumes the numbers are sorted in increasing order! Process from first to last
+// from wiki
+void findLIS(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
+{
+	int i;
+	int low, high, mid;
+	int32_t lis[numAnchors+1];
+	int32_t prev[numAnchors];
+
+	int lisLen = 0, tmpLen;
+
+	for(i = 0; i < numAnchors; i++)
+	{
+		low = 1;
+		high = lisLen;
+
+		while(low <= high)
+		{
+			mid = ceil((low+high)/2.0);
+			if(anchors[lis[mid]].tPos < anchors[i].tPos)
+			{
+				low = mid + 1;
+			}
+			else
+			{
+				high = mid - 1;
+			}
+		}
+
+		tmpLen = low;
+
+		prev[i] = lis[tmpLen - 1];
+		lis[tmpLen] = i;
+
+		if(tmpLen > lisLen)
+		{
+			lisLen = tmpLen;
+		}
+	}
+
+	// store LIS
+	int curr = lis[lisLen];
+	bestChain.chainLen = lisLen;
+
+	for(i = lisLen - 1; i>=0; i--)
+	{
+		bestChain.seeds[i] = anchors[curr];
+		curr = prev[curr];
+	}
+}
+
+// from algorithmist
+void findLIS2(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
+{
+        int i;
+        int low, high, mid;
+        int32_t lis[numAnchors];
+        int32_t prev[numAnchors];
+        int lisLen;
+
+        lis[0] = 0;
+        lisLen = 1;
+
+        for(i = 1; i < numAnchors; i++)
+        {
+		// make a larger LIS
+                if(anchors[lis[lisLen-1]].tPos < anchors[i].tPos)
+                {
+                        prev[i] = lis[lisLen-1];
+                        lis[lisLen++] = i;
+                        continue;
+                }
+
+		// binary search
+                low = 0;
+                high = lisLen-1;
+                while(low < high)
+                {
+                        mid = (low + high)/2;
+                        fprintf(stderr, "mid: %d\n", mid);
+                        if(anchors[lis[mid]].tPos < anchors[i].tPos)
+                        {
+                                low = mid + 1;
+                        }
+                        else
+                        {
+                                high = mid;
+                        }
+                }
+
+                if (anchors[i].tPos < anchors[lis[low]].tPos) 
+                {
+                        if (low > 0) prev[i] = lis[low-1];
+                        lis[low] = i;
+                } 
+        }
+	
+	// store LIS
+	int curr = lis[lisLen-1];
+	for(i = lisLen; i--; curr = prev[curr])
+	{
+		// lis[i] = curr;
+		bestChain.seeds[i] = anchors[curr];
+	}
+
+	bestChain.chainLen = lisLen;
+        // for(i = 0; i < lisLen; i++)
+        // {
+        //        bestChain.seeds[i] = anchors[lis[i]];
+        // }
+}
+
 // finds the longest increasing subsequence in O(n^2)
 // assumes the numbers are sorted in decreasing order! Process from last to first
-void findLIS_rev(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
+void findLIS_n2_rev(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 {
 	int i, j;
 	int32_t lis[numAnchors];
@@ -859,7 +972,7 @@ void findLIS_rev(Seed_t *anchors, uint32_t numAnchors, Chain_t &bestChain)
 		}
 	}
 
-	// print LIS
+	// store LIS
 	int curr = lisEnd;
 	int idx = lisLen - 1;
 	bestChain.chainLen = lisLen;
@@ -918,11 +1031,11 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
-		// fprintf(stderr, "@@@\n");
-		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		// {
-		// 	fprintf(stderr, "\tgoood\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
-		// }
+		fprintf(stderr, "@@@\n");
+		for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		{
+			fprintf(stderr, "\tgoood\t-\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		}
 
 		// if(seedPos_Low > 2000000000)
 		// 	for(i = 0; i < _pf_seedsSelected[id].num; i++)
@@ -945,15 +1058,15 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 		// 	fprintf(stderr, "\tchain\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
 		// }
 
-		findLIS_rev(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
+		findLIS_n2_rev(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
 		// _pf_topChains[id].num = 1;
 		LIS2Chain(_pf_topChains[id].list[1], _pf_topChains[id].list[0]);
 
-		// fprintf(stderr, "---\n");
-		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// {
-		// 	fprintf(stderr, "\tliiis\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		// }
+		fprintf(stderr, "---\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tliiis\t-\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
 
 		alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
 	}
@@ -970,11 +1083,11 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			}
 		}
 
-		// fprintf(stderr, "@@@\n");
-		// for(i = 0; i < _pf_seedsSelected[id].num; i++)
-		// {
-		// 	fprintf(stderr, "\tgoood\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
-		// }
+		fprintf(stderr, "@@@\n");
+		for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		{
+			fprintf(stderr, "\tgoood\t+\t%u\t%u\t%u\n", _pf_seedsSelected[id].list[i].qPos, _pf_seedsSelected[id].list[i].tPos, _pf_seedsSelected[id].list[i].len);
+		}
 
 		// if(seedPos_Low > 2000000000)
 		// 	for(i = 0; i < _pf_seedsSelected[id].num; i++)
@@ -997,15 +1110,16 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 		// 	fprintf(stderr, "\tchain\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
 		// }
 
-		findLIS(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
+		// findLIS_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
+		findLIS2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[1]);
 		// _pf_topChains[id].num = 1;
 		LIS2Chain(_pf_topChains[id].list[1], _pf_topChains[id].list[0]);
 
-		// fprintf(stderr, "+++\n");
-		// for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-		// {
-		// 	fprintf(stderr, "\tliiis\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
-		// }
+		fprintf(stderr, "+++\n");
+		for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+		{
+			fprintf(stderr, "\tliiis\t+\t%u\t%u\t%u\n", _pf_topChains[id].list[0].seeds[i].qPos, _pf_topChains[id].list[0].seeds[i].tPos, _pf_topChains[id].list[0].seeds[i].len);
+		}
 		
 		alignChain(_pf_topChains[id].list[0], query, rLen, map);
 	}
