@@ -1,6 +1,8 @@
-.TH lordFAST 1 "Last Updated: Apr 08, 2015" lordFAST "lordfast Manual"
+.TH lordFAST 1 "Last Updated: Sep 13, 2017" lordFAST "lordfast Manual"
+
 .SH NAME
 lordfast
+
 .SH DESCRIPTION
 lordFAST is a sensitive tool for mapping long reads with high error rates. lordFAST is specially designed for aligning reads from PacBio sequencing technology but provides the user the ability to change alignment parameters depending on the reads and application.
 
@@ -13,7 +15,6 @@ or alternatively clone the repository by running the following command:
 .br
 $ git clone https://github.com/vpc-ccg/lordfast.git
 
-.br
 Now the code can be compiled easily by running "make" command line which builds the binary file "lordfast".
 .br
 $ cd lordfast
@@ -21,31 +22,50 @@ $ cd lordfast
 $ make
 
 .SH SYNOPSIS
-lordfast --index [file] [OPTIONS]
+lordfast --index FILE [OPTIONS]
 .br
-lordfast --search [index] --seq [file] [OPTIONS]
-.SH OPTIONS
-.SS GENERAL OPTIONS
-.TP
-.B
--h, --help
-Prints this help file.
-.TP
-.B
--v, --version
-Prints the version of software.
+lordfast --search FILE --seq FILE [OPTIONS]
 
+.SH OPTIONS
+.br
+.SS INDEXING OPTIONS
+.TP
+.BI "-I, --index " STR
+Path to the reference genome file in FASTA format which is
+.br
+supposed to be indexed. [required]
+.br
 .SS MAPPING OPTIONS
 .TP
-.BI --threads " t"
-Use 
-.I t
-number of cores for mapping the sequences (default: 1). Use
-.I 0
-to use all the available cores in the system.
+.BI "-S, --search " STR
+Path to the reference genome file in FASTA format. [required]
+.TP
+.BI "-k, --minAnchorLen " INT
+Minimum required length of anchors to be considered. [14]
+.TP
+.BI "-o, --out " STR
+Write output to 
+.I STR
+file rather than standard output. [stdout]
+.TP
+.BI "-m, --maxRefHit " INT
+Ignore anchoring positions with more than 
+.I INT
+reference hits. [1000]
+.TP
+.BI "-t, --threads " INT
+The number of cores for mapping the sequences. Pass 0
+to use all the available cores in the system. [1]
+.br
+.SS GENERAL OPTIONS
+.TP
+.B -h, --help
+Prints this help file.
+.TP
+.B -v, --version
+Prints the version of software.
 
 .SH EXAMPLES
-
 Indexing reference genome:
 .br
 $ ./lordfast --index refgen.fasta
@@ -57,9 +77,9 @@ $ ./lordfast --search refgen.fa --seq reads.fastq > map.sam
 $ ./lordfast --search refgen.fa --seq reads.fastq --threads 4 > map.sam
 
 .SH BUGS
-Please report the bugs through lordfast's web page at 
+Please report the bugs through lordfast's issues page at 
 .br
-https://github.com/vpc-ccg/lordfast
+https://github.com/vpc-ccg/lordfast/issues
 
 .SH Author
 Ehsan Haghshenas (ehaghshe@sfu.ca)
@@ -67,5 +87,4 @@ Ehsan Haghshenas (ehaghshe@sfu.ca)
 Faraz Hach (fhach@sfu.ca)
 
 .SH COPYRIGHT
-
 Copyright (c) <2015-2020>, Simon Fraser University All rights reserved.

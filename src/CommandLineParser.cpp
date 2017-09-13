@@ -126,11 +126,11 @@ int parseCommandLine (int argc, char *argv[])
 		{"out",						required_argument,	0,					'o'},
 		{"unMapped",				required_argument,	0,					'u'},
 		{"thread",					required_argument,  0,					't'},
-		{"minMatch",				required_argument,  0,					'k'},
+		{"minAnchorLen",			required_argument,  0,					'k'},
 		{"seedCount",				required_argument,  0,					'c'},
 		{"err",						required_argument,  0,					'e'},
-		{"maxHit",					required_argument,  0,					'm'},
-		{"maxMap",					required_argument,  0,					'n'},
+		{"maxRefHit",				required_argument,  0,					'm'},
+		{"numMap",					required_argument,  0,					'n'},
 		{"help",					no_argument,		0,					'h'},
 		{"version",					no_argument,		0,					'v'},
 		// {"sl",						required_argument,  0,					'l'},
@@ -191,7 +191,7 @@ int parseCommandLine (int argc, char *argv[])
 				exit(EXIT_SUCCESS);
 				break;
 			case 'v':
-				fprintf(stdout, "Version: %s\n", PROG_VERSION);
+				fprintf(stdout, "lordFAST %s\n", PROG_VERSION);
 				exit(EXIT_SUCCESS);
 				break;
 			// case 'l':
