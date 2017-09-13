@@ -20,57 +20,52 @@ Now the code can be compiled easily by running "make" command line which builds 
     lordfast --search FILE --seq FILE [OPTIONS]
 
 ### OPTIONS
-#### GENERAL OPTIONS
+#### INDEXING OPTIONS
 
+    -I, --index STR
+	    Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
+
+#### MAPPING OPTIONS
+	-S, --search STR
+		Path to the reference genome file in FASTA format. [required]
+
+	-k, --minAnchorLen INT
+		Minimum required length of anchors to be considered. [14]
+
+	-o, --out STR
+		Write output to STR file rather than standard output. [stdout]
+
+	-m, --maxRefHit INT
+		Ignore  anchoring  positions  with more than INT reference hits. [1000]
+
+	-t, --threads INT
+		The number of cores for mapping the sequences.
+		Pass 0 to use all the available cores in the system. [1]
+
+#### GENERAL OPTIONS
 	-h, --help
 		Prints this help file.
-		
+
 	-v, --version
 		Prints the version of software.
 
-####INDEXING OPTIONS
 
-    --ws window_size
-	    Index the reference genome with sliding a window of size window_size
-	    (default: 14)
+### EXAMPLES
+#### Indexing reference genome:
 
+    $ ./lordfast --index refgen.fasta
 
-####MAPPING OPTIONS
+#### Mapping to the reference genome:
 
-    --threads t
-	    Use t number of cores for mapping the sequences
-	    (default: 1)
-	    Use 0 to use all the available cores in the system
-	    
-    --seq file
-	    Set the input sequence to file
-	    
-    -o file
-	    Output the mapping record into file
-	    (default: output)
+    $ ./lordfast --search refgen.fa --seq reads.fastq > map.sam
+    $ ./lordfast --search refgen.fa --seq reads.fastq --threads 4 > map.sam
 
-    --sl segment_length
-        Consider  segments  of length segment_length for sampling seeds.
-        (default: 500)
+## BUGS
+Please report the bugs through lordfast's issues page at [https://github.com/vpc-ccg/lordfast/issues](https://github.com/vpc-ccg/lordfast/issues).
 
-    --sc seed_count
-        Sample seeds from first seed_count locations  of  each  segment.
-        (default: 250)
-
-
-###EXAMPLES
-####Indexing reference genome:
-
-    $ ./pacfast --index refgen.fasta
-    $ ./pacfast --index refgen.fasta --ws 15
-####Mapping to the reference genome:
-
-    $ ./pacfast --search refgen.fa --seq reads.fastq
-    $ ./pacfast --search refgen.fa --seq reads.fastq --threads 4
-
-##Authors
-Faraz Hach (fhach AT sfu DOT ca)  
-Ehsan Haghshenas (ehaghshe AT sfu DOT ca)  
-Iman Sarrafi (isarrafi AT sfu DOT ca)
+## Authors
+Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
+</br>
+Faraz Hach (fhach AT sfu DOT ca)
 
 Copyright (c) <2015-2020>, Simon Fraser University All rights reserved.
