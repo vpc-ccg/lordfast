@@ -9,8 +9,8 @@ In order to install lordFAST, please download the source code from [https://gith
     $ git clone https://github.com/vpc-ccg/lordfast.git
 Now the code can be compiled easily by running "make" command line which builds the binary file "lordfast".
 
-	$ cd lordfast
-	$ make
+    $ cd lordfast
+    $ make
 
 ## How to run?
 
@@ -23,31 +23,31 @@ Now the code can be compiled easily by running "make" command line which builds 
 #### INDEXING OPTIONS
 
     -I, --index STR
-	    Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
+        Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
 
 #### MAPPING OPTIONS
-	-S, --search STR
-		Path to the reference genome file in FASTA format. [required]
+    -S, --search STR
+        Path to the reference genome file in FASTA format. [required]
 
-	-k, --minAnchorLen INT
-		Minimum required length of anchors to be considered. [14]
+    -k, --minAnchorLen INT
+        Minimum required length of anchors to be considered. [14]
 
-	-o, --out STR
-		Write output to STR file rather than standard output. [stdout]
+    -o, --out STR
+        Write output to STR file rather than standard output. [stdout]
 
-	-m, --maxRefHit INT
-		Ignore  anchoring  positions  with more than INT reference hits. [1000]
+    -m, --maxRefHit INT
+        Ignore  anchoring  positions  with more than INT reference hits. [1000]
 
-	-t, --threads INT
-		The number of cores for mapping the sequences.
-		Pass 0 to use all the available cores in the system. [1]
+    -t, --threads INT
+        The number of cores for mapping the sequences.
+        Pass 0 to use all the available cores in the system. [1]
 
 #### GENERAL OPTIONS
-	-h, --help
-		Prints this help file.
+    -h, --help
+        Prints this help file.
 
-	-v, --version
-		Prints the version of software.
+    -v, --version
+        Prints the version of software.
 
 
 ### EXAMPLES
