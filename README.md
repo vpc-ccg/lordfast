@@ -36,7 +36,7 @@ Now the code can be compiled easily by running "make" command line which builds 
         Write output to STR file rather than standard output. [stdout]
 
     -m, --maxRefHit INT
-        Ignore anchoring positions with more than INT reference hits. [1000]
+        Ignore anchoring positions with more than INT reference matches. [1000]
 
     -t, --threads INT
         The number of cores for mapping the sequences.
