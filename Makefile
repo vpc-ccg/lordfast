@@ -27,6 +27,7 @@ LORDFASTOBJ   = $(SRCDIR)/baseFAST.o \
                $(SRCDIR)/LordFAST.o \
                $(SRCDIR)/Clasp.o \
                $(EDLIBDIR)/edlib.o \
+               $(SRCDIR)/Chain.o \
                HELP.o \
 
 CLASPOBJ     = $(CLASPDIR)/*.o
