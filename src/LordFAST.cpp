@@ -333,7 +333,7 @@ void* mapSeq(void *idp)
 		std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
 
 		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
-		// continue; // seeding and candidate selection
+		continue; // seeding and candidate selection
 
 		float scoreRatio = 2;
 		if(_pf_topWins[id].list[0].score >= scoreRatio * _pf_topWins[id].list[1].score) // significantly better window => coarse mode
