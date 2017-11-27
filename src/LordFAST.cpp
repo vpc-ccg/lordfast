@@ -44,6 +44,7 @@ ChainList 			*_pf_topChains;
 Sam_t               **_pf_topMappings;
 
 WinCount_t 			**_pf_refWin_cnt;
+uint16_t            **_pf_refWin_cnt2;
 uint32_t			_pf_refWin_num;
 // char 				*_pf_refGenSeq;
 uint32_t 			_pf_refGenLen;
@@ -84,6 +85,7 @@ void initializeFAST()
 
 	_pf_threads       = (pthread_t*) getMem(THREAD_COUNT * sizeof(pthread_t));
 	_pf_refWin_cnt 	  = (WinCount_t**) getMem(THREAD_COUNT * sizeof(WinCount_t*));
+	_pf_refWin_cnt2   = (uint16_t**) getMem(THREAD_COUNT * sizeof(uint16_t*));
 	// _pf_seedsFR       = (SeedList*)  getMem(THREAD_COUNT * sizeof(SeedList));
 	_pf_seedsForward  = (SeedList*)  getMem(THREAD_COUNT * sizeof(SeedList));
 	_pf_seedsReverse  = (SeedList*)  getMem(THREAD_COUNT * sizeof(SeedList));
@@ -101,6 +103,7 @@ void initializeFAST()
 	for(i=0; i<THREAD_COUNT; i++)
 	{
 		_pf_refWin_cnt[i]         = (WinCount_t*) getMem(_pf_refWin_num * sizeof(WinCount_t));
+		_pf_refWin_cnt2[i]        = (uint16_t*) getMem(_pf_refWin_num * sizeof(uint16_t));
 		// _pf_seedsFR[i].list       = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
 		_pf_seedsForward[i].list  = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
 		_pf_seedsReverse[i].list  = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
@@ -184,6 +187,7 @@ void finalizeFAST()
 			freeMem(_pf_topMappings[i][j].cigar, 2 * SEQ_MAX_LENGTH * sizeof(char));
 		}
 		freeMem(_pf_refWin_cnt[i], _pf_refWin_num * sizeof(WinCount_t));
+		freeMem(_pf_refWin_cnt2[i], _pf_refWin_num * sizeof(uint16_t));
 		// freeMem(_pf_seedsFR[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
 		freeMem(_pf_seedsForward[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
 		freeMem(_pf_seedsReverse[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
@@ -196,6 +200,7 @@ void finalizeFAST()
 
 	freeMem(_pf_threads, THREAD_COUNT * sizeof(pthread_t));
 	freeMem(_pf_refWin_cnt, THREAD_COUNT * sizeof(WinCount_t*));
+	freeMem(_pf_refWin_cnt2, THREAD_COUNT * sizeof(uint16_t*));
 	// freeMem(_pf_seedsFR, THREAD_COUNT * sizeof(SeedList));
 	freeMem(_pf_seedsForward, THREAD_COUNT * sizeof(SeedList));
 	freeMem(_pf_seedsReverse, THREAD_COUNT * sizeof(SeedList));
@@ -325,7 +330,13 @@ void* mapSeq(void *idp)
 		// getLocs_extend_whole_step3(read->seq, readLen, SAMPLING_COUNT, _pf_seedsForward + id, _pf_seedsReverse + id);
 		// continue; // just do seeding
 		// reset number of top windows
-		_pf_topWins[id].num = 0;
+        // _pf_topWins[id].num = 0;
+        _pf_topWins[id].num = 10;
+        for(i = 0; i < _pf_maxWin; i++)
+        {
+            _pf_topWins[id].list[i].score = 0;
+            std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + i, compareWin);
+        }
 		findTopWins(readLen, _pf_seedsForward + id, 0, t, id); //find candidate paths for forward
 		findTopWins(readLen, _pf_seedsReverse + id, 1, -t, id); //find candidate paths for reverse
 
@@ -385,7 +396,7 @@ void* mapSeq(void *idp)
 	return NULL;
 }
 /**********************************************/
-void findTopWins(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id)
+void findTopWins_old(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id)
 {
 	int i, winNumLimit;
 
@@ -460,6 +471,69 @@ void findTopWins(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx
 			}
 		}
 	}
+}
+/**********************************************/
+void findTopWins(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id)
+{
+	int i, winNumLimit;
+
+    memset(_pf_refWin_cnt2[id], 0, _pf_refWin_num * sizeof(uint16_t));
+    // __int128 *ptr = (__int128 *) _pf_refWin_cnt2[id];
+    // for(i = 0; i < _pf_refWin_num / 8; i++)
+    // {
+    //     *ptr = 0;
+    //     ptr++;
+    // }
+
+	for(i=0; i<seeds->num; i++)
+	{
+		int32_t winId = seeds->list[i].tPos / chunk_overlap;
+
+		// int32_t weight = (seeds->list[i].len - WINDOW_SIZE); //  979:1 4:2 1:3 16:-1
+		int32_t weight = 1 + (seeds->list[i].len - WINDOW_SIZE); // 978:1 6:2 1:3 15:-1
+		// int32_t weight = 1 + 2 * (seeds->list[i].len - WINDOW_SIZE); //  978:1 5:2 1:3 16:-1
+		// int32_t weight = 1 + 5 * (seeds->list[i].len - WINDOW_SIZE); //  979:1 5:2 1:3 15:-1
+
+		_pf_refWin_cnt2[id][winId] += weight;
+		if(winId-1 >= 0)
+			_pf_refWin_cnt2[id][winId-1] += weight;
+	}
+
+	winNumLimit = _pf_refGenLen / chunk_overlap + 2;
+	if(winNumLimit > _pf_refWin_num)
+        winNumLimit = _pf_refWin_num;
+
+	// find top _pf_maxWin wins using a heap
+	for(i = 0; i < winNumLimit; i++)
+	{
+		if(_pf_refWin_cnt2[id][i] > 0 && 
+			(i==0 || (i>0 && _pf_refWin_cnt2[id][i] >= _pf_refWin_cnt2[id][i-1])) &&
+        	(i==_pf_refWin_num-1 || (i<_pf_refWin_num-1 && _pf_refWin_cnt2[id][i] > _pf_refWin_cnt2[id][i+1])) )
+        // if(_pf_refWin_cnt2[id][i] > 0)
+		{
+			// if(_pf_topWins[id].num < _pf_maxWin) // the list has some space, push the chains 
+			// {
+			// 	_pf_topWins[id].list[_pf_topWins[id].num].tStart = i*chunk_overlap;
+			// 	_pf_topWins[id].list[_pf_topWins[id].num].tEnd = (i+2)*chunk_overlap-1;
+			// 	_pf_topWins[id].list[_pf_topWins[id].num].score = _pf_refWin_cnt2[id][i];
+			// 	_pf_topWins[id].list[_pf_topWins[id].num++].isReverse = isRev;
+			// 	std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
+			// }
+			// else
+			// {
+				if( _pf_refWin_cnt2[id][i] > _pf_topWins[id].list[0].score) // if the score is higher than the current smallest score, replace it with that
+				{
+					std::pop_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin); // the smallest score chain is at the last position
+					// update the last chain
+					_pf_topWins[id].list[_pf_topWins[id].num-1].tStart = i*chunk_overlap;
+					_pf_topWins[id].list[_pf_topWins[id].num-1].tEnd = (i+2)*chunk_overlap-1;
+					_pf_topWins[id].list[_pf_topWins[id].num-1].score = _pf_refWin_cnt2[id][i];
+					_pf_topWins[id].list[_pf_topWins[id].num-1].isReverse = isRev;
+					std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
+				}
+			// }
+		}
+    }
 }
 /**********************************************/
 float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isReverse, int id)
