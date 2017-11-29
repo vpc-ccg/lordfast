@@ -221,7 +221,7 @@ void initFASTChunk(Read *seqList, int seqListSize)
 	// memset(_pf_refWin_cnt[id], 0, _pf_refWin_num * sizeof(uint32_t));
 	for(i = 0; i < THREAD_COUNT; i++)
 		for(j = 0; j < _pf_refWin_num; j++)
-			_pf_refWin_cnt[i][j].readIdx = _pf_seqListSize + 100;
+			_pf_refWin_cnt[i][j].readIdx = 2 * _pf_seqListSize + 10;
 
 	// _pf_chainList = (Chain_t**) getMem(_pf_seqListSize * sizeof(Chain_t*));
 	// _pf_chainListSize = (uint8_t*) getMem(_pf_seqListSize * sizeof(uint8_t));
@@ -316,6 +316,8 @@ void* mapSeq(void *idp)
 		read = _pf_seqList + t;
 		readLen = (*read->length);
 		qualLen = (*read->isFq ? *read->length : 1);
+		
+		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
 
 		reverseComplete(read->seq, seq_rev, *read->length);
 
@@ -326,13 +328,19 @@ void* mapSeq(void *idp)
 		// continue; // just do seeding
 		// reset number of top windows
 		_pf_topWins[id].num = 0;
-		findTopWins(readLen, _pf_seedsForward + id, 0, t, id); //find candidate paths for forward
-		findTopWins(readLen, _pf_seedsReverse + id, 1, -t, id); //find candidate paths for reverse
+		findTopWins(readLen, _pf_seedsForward + id, 0, t+1, id); //find candidate paths for forward
+		findTopWins(readLen, _pf_seedsReverse + id, 1, -(t+1), id); //find candidate paths for reverse
 
 		// sort the windows based on the score!
 		std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
 
-		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+		// fprintf(stderr, "\t### num candidate: %d\n", _pf_topWins[id].num);
+		// for(int ii = 0; ii < _pf_topWins[id].num; ii++)
+		// {
+		// 	fprintf(stderr, "\t### candidate %d: %u %u %d %f\n", ii+1, _pf_topWins[id].list[ii].tStart, _pf_topWins[id].list[ii].tEnd,
+		// 	_pf_topWins[id].list[ii].isReverse, _pf_topWins[id].list[ii].score);
+		// }
+
 		// continue; // seeding and candidate selection
 
 		float scoreRatio = 2;
@@ -348,9 +356,20 @@ void* mapSeq(void *idp)
 		}
 		else // fine mode
 		{
+			for(i = 0; i < THREAD_COUNT; i++)
+				for(j = 0; j < _pf_refWin_num; j++)
+					_pf_refWin_cnt[i][j].readIdx = _pf_seqListSize + 100;
+			
 			_pf_topWins[id].num = 0;
-			findTopWins3(readLen, _pf_seedsForward + id, 0, t, (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for forward
-			findTopWins3(readLen, _pf_seedsReverse + id, 1, -t, (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for reverse
+			findTopWins3(readLen, _pf_seedsForward + id, 0, t+_pf_seqListSize+1, (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for forward
+			findTopWins3(readLen, _pf_seedsReverse + id, 1, -(t+_pf_seqListSize+1), (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for reverse
+
+			// fprintf(stderr, "\t### num candidate: %d\n", _pf_topWins[id].num);
+			// for(int ii = 0; ii < _pf_topWins[id].num; ii++)
+			// {
+			// 	fprintf(stderr, "\t### candidate %d: %u %u %d %f\n", ii+1, _pf_topWins[id].list[ii].tStart, _pf_topWins[id].list[ii].tEnd,
+			// 	_pf_topWins[id].list[ii].isReverse, _pf_topWins[id].list[ii].score);
+			// }
 
 			for(i=0; i<_pf_topWins[id].num; i++)
 			{
