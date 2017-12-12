@@ -5,6 +5,7 @@
 #include "Chain.h"
 
 #include <deque>
+#include <cmath>
 
 int par_maxSeedDist = 500;
 const int8_t LogTable256[256] = {
@@ -40,12 +41,20 @@ inline int dist_read(Seed_t &s1, Seed_t &s2)
 
 inline double score_alpha(int distR, int distT, int seedLen)
 {
+    return seedLen;
+
     int minDist = distR < distT ? distR : distT;
     return seedLen < minDist ? seedLen : minDist;
 }
 
 inline double score_betha(int distR, int distT, int seedLen)
 {
+    // return (distT + distR ? sqrt(distT + distR) : 0);
+
+    int maxD = distR < distT ? distT : distR;
+    int minD = distR < distT ? distR : distT;
+    return 0.2 * (maxD - minD) + 0 * minD;
+
     uint32_t d = distR > distT ? distR - distT : distT - distR;
     int32_t dLog = d ? ilog2_32(d) : 0;
 	// return 0.01 * seedLen * d + 0.5 * dLog;
@@ -72,27 +81,38 @@ void chain_seeds(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain)
 
     for(i = 0; i < nFragment; i++)
     {
+        // fprintf(stderr, "\n###\ti:%d\t(%u,%u)\t(%u,%u)\t%u\n", i, fragment_list[i].qPos, 
+        //     fragment_list[i].qPos + fragment_list[i].len - 1, fragment_list[i].tPos, 
+        //     fragment_list[i].tPos + fragment_list[i].len - 1, fragment_list[i].len);
 		dp[i] = fragment_list[i].len;
-		prev[i] = -1;
+        prev[i] = -1;
         for(j = i - 1; j >=0 ; j--)
         {
+            // fprintf(stderr, "\n###\t\tj:%d\t(%u,%u)\t(%u,%u)\t%u", j, fragment_list[j].qPos, 
+            //     fragment_list[j].qPos + fragment_list[j].len - 1, fragment_list[j].tPos, 
+            //     fragment_list[j].tPos + fragment_list[j].len - 1, fragment_list[j].len);
 			distR = fragment_list[i].qPos - (fragment_list[j].qPos + fragment_list[j].len - 1);
 			if(distR <= 0) continue;
-			// if(distR < 0) continue;
+            // if(distR < 0) continue;
+            // fprintf(stderr, "\t%d", distR);
+
 			if(distR > par_maxSeedDist) break;
 			
             distT = fragment_list[i].tPos - (fragment_list[j].tPos + fragment_list[j].len - 1);
-            if(distT < 0)
-            	continue;
+            if(distT <= 0) continue;
+            // if(distT < 0) continue;    
+            // fprintf(stderr, "\t%d", distT);
+
             aScore = score_alpha(distR, distT, fragment_list[i].len);
             // aScore = fragment_list[i].len + 1;
             bScore = score_betha(distR, distT, fragment_list[i].len);
 
+            // fprintf(stderr, "\tscore: %lf", dp[j] + aScore - bScore);
 			if(dp[j] + aScore - bScore > dp[i])
 			{
 				dp[i] = dp[j] + aScore - bScore;
-				prev[i] = j;
-			}
+                prev[i] = j;
+            }
         }
         // 
         if(dp[i] > bestScore)
