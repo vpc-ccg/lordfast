@@ -42,7 +42,9 @@ inline int dist_read(Seed_t &s1, Seed_t &s2)
 
 inline double score_alpha(int distR, int distT, int seedLen)
 {
-    return seedLen;
+    // return seedLen;
+    // return 0.5 * seedLen;
+    return 0.55 * seedLen;
 
     int minDist = distR < distT ? distR : distT;
     return seedLen < minDist ? seedLen : minDist;
