@@ -1,6 +1,7 @@
 PROG_VERSION := "0.0.1"
 
 all: OPTIMIZE_FLAGS build
+log: OPTIMIZE_FLAGS LOG_FLAG build
 debug: DEBUG_FLAGS build
 profile: PROFILE_FLAGS build
 build: clean-exe SSE_FLAGS clasplib bwalib lordfast clean
@@ -27,6 +28,7 @@ LORDFASTOBJ   = $(SRCDIR)/baseFAST.o \
                $(SRCDIR)/LordFAST.o \
                $(SRCDIR)/Clasp.o \
                $(EDLIBDIR)/edlib.o \
+               $(SRCDIR)/Chain.o \
                HELP.o \
 
 CLASPOBJ     = $(CLASPDIR)/*.o
@@ -75,6 +77,9 @@ DEBUG_FLAGS:
 
 OPTIMIZE_FLAGS:
 	$(eval CXXFLAGS = $(CXXFLAGS) -O2)
+
+LOG_FLAG:
+	$(eval CXXFLAGS = $(CXXFLAGS) -DDODEBUG)
 
 PROFILE_FLAGS:
 	$(eval CXXFLAGS = $(CXXFLAGS) -pg -g)

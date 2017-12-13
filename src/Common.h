@@ -41,13 +41,18 @@
 #define MRSFAST_SSE4
 #endif
 
-
 #include <stdio.h>
 #include <zlib.h>
 #include <stdint.h>
 
 #include <string>
 #include <sstream>
+
+#ifdef DODEBUG 
+#define DEBUG(cmd) cmd
+#else 
+#define DEBUG(cmd)
+#endif
 
 #define SEQ_MAX_LENGTH		50000		// Seq Max Length
 #define ALIGN_SEQ_MAX_LEN 	75000
@@ -60,7 +65,6 @@
 #define SEED_MERGING_RANGE  500
 #define MAX_QGRAM_DIS		30
 #define MIN_SUP_THRESHOLD	0.4
-
 
 typedef uint64_t CompressedSeq;
 typedef uint16_t CheckSumType;

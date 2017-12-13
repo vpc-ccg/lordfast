@@ -136,9 +136,7 @@ int parseCommandLine (int argc, char *argv[])
 		// {"sl",						required_argument,  0,					'l'},
 		// {"mem",						required_argument,  0,					'z'},
 		{0,0,0,0}
-	};
-
-
+    };
 
 	while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:c:e:m:n:hv", longOptions, &index))!= -1 )
 	{
@@ -201,7 +199,6 @@ int parseCommandLine (int argc, char *argv[])
 			// 	MAX_MEMORY = atoi(optarg);
 			// 	break;
 		}
-
 	}
 
 // #ifndef MRSFAST_SSE4
