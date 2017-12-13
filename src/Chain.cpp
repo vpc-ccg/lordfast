@@ -6,6 +6,7 @@
 
 #include <deque>
 #include <cmath>
+#include <algorithm>
 
 int par_maxSeedDist = 500;
 const int8_t LogTable256[256] = {
@@ -61,6 +62,11 @@ inline double score_betha(int distR, int distT, int seedLen)
 	return 0.01 * 17 * d + 0.5 * dLog;
 }
 
+bool compare_seed(Seed_t a, Seed_t b)
+{
+    return a.qPos < b.qPos;
+}
+
 // void chain_seeds(vector<Seed_t> &seedList, Graph_t &graph, deque<int> &bestChain)
 void chain_seeds(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain)
 {
@@ -79,6 +85,8 @@ void chain_seeds(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain)
     double bestScore = -1;
     int bestIndex = -1;
 
+    std::sort(fragment_list, fragment_list + nFragment, compare_seed);
+
     for(i = 0; i < nFragment; i++)
     {
         // fprintf(stderr, "\n###\ti:%d\t(%u,%u)\t(%u,%u)\t%u\n", i, fragment_list[i].qPos, 
@@ -96,7 +104,7 @@ void chain_seeds(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain)
             // if(distR < 0) continue;
             // fprintf(stderr, "\t%d", distR);
 
-			if(distR > par_maxSeedDist) break;
+			// if(distR > par_maxSeedDist) break;
 			
             distT = fragment_list[i].tPos - (fragment_list[j].tPos + fragment_list[j].len - 1);
             if(distT <= 0) continue;

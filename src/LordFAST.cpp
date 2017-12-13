@@ -864,17 +864,37 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
             }
         });
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_seedsSelected[id].num; i++)
-				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
+		// if(seedPos_Low > 2000000000)
+		// 	for(i = 0; i < _pf_seedsSelected[id].num; i++)
+		// 		_pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
 		// clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		chain_seeds(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		_pf_topChains[id].num = 1;
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+		// if(seedPos_Low > 2000000000)
+		// 	for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+        //         _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+                
+        DEBUG({
+            Chain_t chain_log;
+            int ilog;
+            uint32_t chrBeg_log;
+            uint32_t chrEnd_log;
+            char *chrName_log;
+            int32_t chrLen_log;
+            chain_log = _pf_topChains[id].list[0];
+            fprintf(stderr, "\tchain\tnum: %u\tscore: %f\n", chain_log.chainLen, chain_log.score);
+            for(ilog = 0; ilog < chain_log.chainLen; ilog++)
+            {
+                bwt_get_intv_info(chain_log.seeds[ilog].tPos, chain_log.seeds[ilog].tPos + chain_log.seeds[ilog].len - 1, &chrName_log, &chrLen_log, &chrBeg_log, &chrEnd_log);
+                fprintf(stderr, "\tchain\tread\t%u\t%u\ttarget\t%s\t%u\t%u\tlen\t%u\n", 
+                    chain_log.seeds[ilog].qPos, chain_log.seeds[ilog].qPos + chain_log.seeds[ilog].len - 1,
+                    // seeds_log->list[ilog].tPos, seeds_log->list[ilog].tPos + seeds_log->list[ilog].len - 1,
+                    chrName_log, chrBeg_log, chrEnd_log, 
+                    chain_log.seeds[ilog].len);
+            }
+        });
 
 		alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
 	}
