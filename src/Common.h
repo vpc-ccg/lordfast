@@ -69,6 +69,8 @@
 typedef uint64_t CompressedSeq;
 typedef uint16_t CheckSumType;
 
+enum chainAlg_t { CHAIN_ALG_CLASP, CHAIN_ALG_DPN2, CHAIN_ALG_LISN2, CHAIN_ALG_LISNLOGN};
+
 extern unsigned int		CONTIG_SIZE;
 extern unsigned int		CONTIG_MAX_SIZE;
 extern unsigned int		THREAD_COUNT;
@@ -112,6 +114,7 @@ extern char				fileName[3][1000];
 extern int				fileCnt;
 extern long long		memUsage;
 extern char				*alphabet;
+extern chainAlg_t       chainAlg;
 
 #pragma pack(push, 1)
 typedef struct
