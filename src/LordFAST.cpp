@@ -316,8 +316,10 @@ void* mapSeq(void *idp)
 		read = _pf_seqList + t;
 		readLen = (*read->length);
 		qualLen = (*read->isFq ? *read->length : 1);
-		
-		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+
+        DEBUG({
+            fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+        });
 
 		reverseComplete(read->seq, seq_rev, *read->length);
 
