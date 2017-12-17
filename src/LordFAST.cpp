@@ -66,7 +66,8 @@ FILE                *_pf_outFile = NULL;
 
 void* 				mapSeq(void *idp);
 int 				pf_getNextRead();
-void 				findTopWins(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id);
+float               calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isReverse, int id);
+void 				findTopWins(uint32_t readLen, SeedList *seeds, int isRev, int readIdx, int id);
 // void 				findTopWins2(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id);
 void 				findTopWins3(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, float minScore, int id);
 // void 				findTopWins4(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id);
@@ -328,6 +329,9 @@ void* mapSeq(void *idp)
 		// getLocs_extend_whole_step2(read->seq, readLen, SAMPLING_COUNT, _pf_seedsForward + id, _pf_seedsReverse + id);
 		// getLocs_extend_whole_step3(read->seq, readLen, SAMPLING_COUNT, _pf_seedsForward + id, _pf_seedsReverse + id);
         // continue; // just do seeding
+
+        std::sort(_pf_seedsForward[id].list, _pf_seedsForward[id].list + _pf_seedsForward[id].num, compareSeed);
+        std::sort(_pf_seedsReverse[id].list, _pf_seedsReverse[id].list + _pf_seedsReverse[id].num, compareSeed);
         
         DEBUG({
             SeedList *seeds_log;
@@ -368,8 +372,20 @@ void* mapSeq(void *idp)
             }
         });
 
+        // fill in the _pf_topWins list
+        for(i = 0; i < _pf_maxWin; i++)
+        {
+            _pf_topWins[id].list[i].tStart = 0;
+            _pf_topWins[id].list[i].tEnd = 0;
+            _pf_topWins[id].list[i].score = -1;
+            _pf_topWins[id].list[i].isReverse = 0;
+            std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + i + 1, compareWin);
+        }
+		_pf_topWins[id].num = _pf_maxWin;
+
 		// reset number of top windows
-		_pf_topWins[id].num = 0;
+		// _pf_topWins[id].num = 0;
+
 		findTopWins(readLen, _pf_seedsForward + id, 0, t+1, id); //find candidate paths for forward
 		findTopWins(readLen, _pf_seedsReverse + id, 1, -(t+1), id); //find candidate paths for reverse
 		// findTopWins(readLen, _pf_seedsForward + id, 0, t, id); //find candidate paths for forward
@@ -388,6 +404,7 @@ void* mapSeq(void *idp)
             }
         });
 
+        // break;
 		// continue; // seeding and candidate selection
 
 		float scoreRatio = 2;
@@ -453,81 +470,149 @@ void* mapSeq(void *idp)
 	return NULL;
 }
 /**********************************************/
-void findTopWins(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id)
+void findTopWins(uint32_t readLen, SeedList *seeds, int isRev, int readIdx, int id)
 {
-	int i, winNumLimit;
+    int wLen = readLen;
+    int wBeg = 0;
+    int wMid = 0;
+    int wEnd = 0;
+    int wCnt = 0;
+    int wScr = 0;
+    float tmpScore;
 
-	// memset(_pf_refWin_cnt[id], 0, _pf_refWin_num * sizeof(uint32_t));
+    // fprintf(stderr, "======================\n");
 
-	for(i=0; i<seeds->num; i++)
-	{
-		int32_t winId = seeds->list[i].tPos / chunk_overlap;
+    // for(int i = 0; i < seeds->num; i++)
+    // {
+    //     fprintf(stderr, "\tseed\t%u\t%u\t%u\t%u\n", seeds->list[i].qPos, seeds->list[i].qPos + seeds->list[i].len - 1, 
+    //             seeds->list[i].tPos, seeds->list[i].tPos + seeds->list[i].len - 1);
+    // }
 
-		// int32_t weight = (seeds->list[i].len - WINDOW_SIZE); //  979:1 4:2 1:3 16:-1
-		int32_t weight = 1 + (seeds->list[i].len - WINDOW_SIZE); // 978:1 6:2 1:3 15:-1
-		// int32_t weight = 1 + 2 * (seeds->list[i].len - WINDOW_SIZE); //  978:1 5:2 1:3 16:-1
-		// int32_t weight = 1 + 5 * (seeds->list[i].len - WINDOW_SIZE); //  979:1 5:2 1:3 15:-1
+    // fprintf(stderr, "======================\n");
 
-		if(_pf_refWin_cnt[id][winId].readIdx == readIdx)
-		{
-			// fprintf(stderr, "@\tYES\t%d\t%d\n", _pf_refWin_cnt[id][winId].readIdx, readIdx);
-			_pf_refWin_cnt[id][winId].cnt += weight;
-		}
-		else
-		{
-			// fprintf(stderr, "@\tNO\t%d\t%d\n", _pf_refWin_cnt[id][winId].readIdx, readIdx);
-			_pf_refWin_cnt[id][winId].readIdx = readIdx;
-			_pf_refWin_cnt[id][winId].cnt = weight;
-		}
-		if(winId-1 >= 0)
-		{
-			if(_pf_refWin_cnt[id][winId-1].readIdx == readIdx)
-			{
-				_pf_refWin_cnt[id][winId-1].cnt += weight;
-			}
-			else
-			{
-				_pf_refWin_cnt[id][winId-1].readIdx = readIdx;
-				_pf_refWin_cnt[id][winId-1].cnt = weight;
-			}
-		}
-	}
+    while(wEnd < seeds->num)
+    {
+        wMid = wEnd;
+        // fprintf(stderr, "\t### %u %u %u\n", seeds->list[wBeg].tPos, seeds->list[wMid].tPos, seeds->list[wEnd].tPos);
+        while(wEnd < seeds->num && seeds->list[wEnd].tPos < seeds->list[wMid].tPos + wLen)
+        {
+            wCnt++;
+            wScr += 1 + (seeds->list[wEnd].len - WINDOW_SIZE);
+            wEnd++;
+        }
+        // fprintf(stderr, "\t### %u %u %u\n", seeds->list[wBeg].tPos, seeds->list[wMid].tPos, seeds->list[wEnd].tPos);
+        while(seeds->list[wBeg].tPos + wLen < seeds->list[wMid].tPos)
+        {
+            wCnt--;
+            wScr -= 1 + (seeds->list[wBeg].len - WINDOW_SIZE);
+            wBeg++;
+        }
+        // fprintf(stderr, "\t### %u %u %u\n", seeds->list[wBeg].tPos, seeds->list[wMid].tPos, seeds->list[wEnd].tPos);
+        // fprintf(stderr, "\t window\t%d %d\t%d, %d\t%u, %u\n", wCnt, wScr, wBeg, wEnd-1, seeds->list[wBeg].tPos, seeds->list[wEnd-1].tPos + seeds->list[wEnd-1].len - 1);
 
-	winNumLimit = _pf_refGenLen / chunk_overlap + 2;
-	if(winNumLimit > _pf_refWin_num)
-		winNumLimit = _pf_refWin_num;
+        // if( wScr > _pf_topWins[id].list[0].score) // if the score is higher than the current smallest score, replace it with that
+        // {
+        //     std::pop_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin); // the smallest score chain is at the last position
+        //     // update the last chain
+        //     _pf_topWins[id].list[_pf_topWins[id].num-1].tStart = seeds->list[wBeg].tPos;
+        //     _pf_topWins[id].list[_pf_topWins[id].num-1].tEnd = seeds->list[wEnd-1].tPos + seeds->list[wEnd-1].len - 1;
+        //     _pf_topWins[id].list[_pf_topWins[id].num-1].score = wScr;
+        //     _pf_topWins[id].list[_pf_topWins[id].num-1].isReverse = isRev;
+        //     std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
+        // }
 
-	// find top _pf_maxWin wins using a heap
-	// for(i = 0; i < _pf_refWin_num; i++)
-	for(i = 0; i < winNumLimit; i++)
-	{
-		if(_pf_refWin_cnt[id][i].readIdx == readIdx && 
-			(i==0 || _pf_refWin_cnt[id][i-1].readIdx != readIdx || _pf_refWin_cnt[id][i].cnt >= _pf_refWin_cnt[id][i-1].cnt) &&
-			(i==_pf_refWin_num-1 || _pf_refWin_cnt[id][i+1].readIdx != readIdx || _pf_refWin_cnt[id][i].cnt > _pf_refWin_cnt[id][i+1].cnt) )
-		{
-			if(_pf_topWins[id].num < _pf_maxWin) // the list has some space, push the chains 
-			{
-				_pf_topWins[id].list[_pf_topWins[id].num].tStart = i*chunk_overlap;
-				_pf_topWins[id].list[_pf_topWins[id].num].tEnd = (i+2)*chunk_overlap-1;
-				_pf_topWins[id].list[_pf_topWins[id].num].score = _pf_refWin_cnt[id][i].cnt;
-				_pf_topWins[id].list[_pf_topWins[id].num++].isReverse = isRev;
-				std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
-			}
-			else
-			{
-				if( _pf_refWin_cnt[id][i].cnt > _pf_topWins[id].list[0].score) // if the score is higher than the current smallest score, replace it with that
-				{
-					std::pop_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin); // the smallest score chain is at the last position
-					// update the last chain
-					_pf_topWins[id].list[_pf_topWins[id].num-1].tStart = i*chunk_overlap;
-					_pf_topWins[id].list[_pf_topWins[id].num-1].tEnd = (i+2)*chunk_overlap-1;
-					_pf_topWins[id].list[_pf_topWins[id].num-1].score = _pf_refWin_cnt[id][i].cnt;
-					_pf_topWins[id].list[_pf_topWins[id].num-1].isReverse = isRev;
-					std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
-				}
-			}
-		}
-	}
+        if(wCnt > 1)
+            tmpScore = calcChainScore(readLen, seeds->list[wBeg].tPos, seeds->list[wEnd-1].tPos + seeds->list[wEnd-1].len - 1, isRev, id);
+        else
+            tmpScore = wScr;
+
+        if( tmpScore > _pf_topWins[id].list[0].score) // if the score is higher than the current smallest score, replace it with that
+        // if( wScr > _pf_topWins[id].list[0].score) // if the score is higher than the current smallest score, replace it with that
+        {
+            std::pop_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin); // the smallest score chain is at the last position
+            // update the last chain
+            _pf_topWins[id].list[_pf_topWins[id].num-1].tStart = seeds->list[wBeg].tPos;
+            _pf_topWins[id].list[_pf_topWins[id].num-1].tEnd = seeds->list[wEnd-1].tPos + seeds->list[wEnd-1].len - 1;
+            _pf_topWins[id].list[_pf_topWins[id].num-1].score = tmpScore;
+            // _pf_topWins[id].list[_pf_topWins[id].num-1].score = wScr;
+            _pf_topWins[id].list[_pf_topWins[id].num-1].isReverse = isRev;
+            std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
+        }
+    }
+
+	// int i, winNumLimit;
+
+	// // memset(_pf_refWin_cnt[id], 0, _pf_refWin_num * sizeof(uint32_t));
+
+	// for(i=0; i<seeds->num; i++)
+	// {
+	// 	int32_t winId = seeds->list[i].tPos / chunk_overlap;
+
+	// 	// int32_t weight = (seeds->list[i].len - WINDOW_SIZE); //  979:1 4:2 1:3 16:-1
+	// 	int32_t weight = 1 + (seeds->list[i].len - WINDOW_SIZE); // 978:1 6:2 1:3 15:-1
+	// 	// int32_t weight = 1 + 2 * (seeds->list[i].len - WINDOW_SIZE); //  978:1 5:2 1:3 16:-1
+	// 	// int32_t weight = 1 + 5 * (seeds->list[i].len - WINDOW_SIZE); //  979:1 5:2 1:3 15:-1
+
+	// 	if(_pf_refWin_cnt[id][winId].readIdx == readIdx)
+	// 	{
+	// 		// fprintf(stderr, "@\tYES\t%d\t%d\n", _pf_refWin_cnt[id][winId].readIdx, readIdx);
+	// 		_pf_refWin_cnt[id][winId].cnt += weight;
+	// 	}
+	// 	else
+	// 	{
+	// 		// fprintf(stderr, "@\tNO\t%d\t%d\n", _pf_refWin_cnt[id][winId].readIdx, readIdx);
+	// 		_pf_refWin_cnt[id][winId].readIdx = readIdx;
+	// 		_pf_refWin_cnt[id][winId].cnt = weight;
+	// 	}
+	// 	if(winId-1 >= 0)
+	// 	{
+	// 		if(_pf_refWin_cnt[id][winId-1].readIdx == readIdx)
+	// 		{
+	// 			_pf_refWin_cnt[id][winId-1].cnt += weight;
+	// 		}
+	// 		else
+	// 		{
+	// 			_pf_refWin_cnt[id][winId-1].readIdx = readIdx;
+	// 			_pf_refWin_cnt[id][winId-1].cnt = weight;
+	// 		}
+	// 	}
+	// }
+
+	// winNumLimit = _pf_refGenLen / chunk_overlap + 2;
+	// if(winNumLimit > _pf_refWin_num)
+	// 	winNumLimit = _pf_refWin_num;
+
+	// // find top _pf_maxWin wins using a heap
+	// // for(i = 0; i < _pf_refWin_num; i++)
+	// for(i = 0; i < winNumLimit; i++)
+	// {
+	// 	if(_pf_refWin_cnt[id][i].readIdx == readIdx && 
+	// 		(i==0 || _pf_refWin_cnt[id][i-1].readIdx != readIdx || _pf_refWin_cnt[id][i].cnt >= _pf_refWin_cnt[id][i-1].cnt) &&
+	// 		(i==_pf_refWin_num-1 || _pf_refWin_cnt[id][i+1].readIdx != readIdx || _pf_refWin_cnt[id][i].cnt > _pf_refWin_cnt[id][i+1].cnt) )
+	// 	{
+	// 		if(_pf_topWins[id].num < _pf_maxWin) // the list has some space, push the chains 
+	// 		{
+	// 			_pf_topWins[id].list[_pf_topWins[id].num].tStart = i*chunk_overlap;
+	// 			_pf_topWins[id].list[_pf_topWins[id].num].tEnd = (i+2)*chunk_overlap-1;
+	// 			_pf_topWins[id].list[_pf_topWins[id].num].score = _pf_refWin_cnt[id][i].cnt;
+	// 			_pf_topWins[id].list[_pf_topWins[id].num++].isReverse = isRev;
+	// 			std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
+	// 		}
+	// 		else
+	// 		{
+	// 			if( _pf_refWin_cnt[id][i].cnt > _pf_topWins[id].list[0].score) // if the score is higher than the current smallest score, replace it with that
+	// 			{
+	// 				std::pop_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin); // the smallest score chain is at the last position
+	// 				// update the last chain
+	// 				_pf_topWins[id].list[_pf_topWins[id].num-1].tStart = i*chunk_overlap;
+	// 				_pf_topWins[id].list[_pf_topWins[id].num-1].tEnd = (i+2)*chunk_overlap-1;
+	// 				_pf_topWins[id].list[_pf_topWins[id].num-1].score = _pf_refWin_cnt[id][i].cnt;
+	// 				_pf_topWins[id].list[_pf_topWins[id].num-1].isReverse = isRev;
+	// 				std::push_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 /**********************************************/
 float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isReverse, int id)
