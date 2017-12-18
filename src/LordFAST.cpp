@@ -316,6 +316,21 @@ void* mapSeq(void *idp)
 		readLen = (*read->length);
 		qualLen = (*read->isFq ? *read->length : 1);
 
+        if(readLen < CHUNK_OVERLAP)
+        {
+            outBuffer<< read->name << "\t4\t*\t0\t0\t*\t*\t0\t0\t" << read->seq << "\t" << read->qual << "\t"
+                << "AS:i:0\n";
+            if(outBuffer.tellp() > opt_outputBufferSize)
+            {
+                pthread_mutex_lock(&_pf_outputLock);
+                fprintf(_pf_outFile, "%s", outBuffer.str().c_str());
+                pthread_mutex_unlock(&_pf_outputLock);
+                outBuffer.str("");
+                outBuffer.clear();
+            }
+            continue;
+        }
+
 		reverseComplete(read->seq, seq_rev, *read->length);
 
 		// extract forward-reverse seeds

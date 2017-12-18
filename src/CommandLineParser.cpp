@@ -127,6 +127,7 @@ int parseCommandLine (int argc, char *argv[])
 		{"unMapped",				required_argument,	0,					'u'},
 		{"thread",					required_argument,  0,					't'},
 		{"minAnchorLen",			required_argument,  0,					'k'},
+		{"minReadLen",			    required_argument,  0,					'l'},
 		{"seedCount",				required_argument,  0,					'c'},
 		{"err",						required_argument,  0,					'e'},
 		{"maxRefHit",				required_argument,  0,					'm'},
@@ -140,7 +141,7 @@ int parseCommandLine (int argc, char *argv[])
 
 
 
-	while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:c:e:m:n:hv", longOptions, &index))!= -1 )
+	while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:l:c:e:m:n:hv", longOptions, &index))!= -1 )
 	{
 		switch (o)
 		{
@@ -174,6 +175,9 @@ int parseCommandLine (int argc, char *argv[])
 			case 'k':
 				WINDOW_SIZE = atoi(optarg);
 				break;
+			case 'l':
+				CHUNK_OVERLAP = atoi(optarg);
+				break;
 			case 'c':
 				SAMPLING_COUNT = atoi(optarg);
 				break;
@@ -200,6 +204,8 @@ int parseCommandLine (int argc, char *argv[])
 			// case 'z':
 			// 	MAX_MEMORY = atoi(optarg);
 			// 	break;
+            default:
+                return 1;
 		}
 
 	}
