@@ -480,8 +480,16 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 			}
 		}
 
+        if(seedPos_Low > 2000000000)
+            for(i = 0; i < _pf_seedsSelected[id].num; i++)
+                _pf_seedsSelected[id].list[i].tPos -= 2000000000;
+
 		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		retScore = _pf_topChains[id].list[0].score;
+
+		if(seedPos_Low > 2000000000)
+			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 	}
 	else
 	{
@@ -494,8 +502,16 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 			}
 		}
 
+        if(seedPos_Low > 2000000000)
+            for(i = 0; i < _pf_seedsSelected[id].num; i++)
+                _pf_seedsSelected[id].list[i].tPos -= 2000000000;
+
 		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		retScore = _pf_topChains[id].list[0].score;
+
+		if(seedPos_Low > 2000000000)
+			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 	}
 	return retScore;
 }

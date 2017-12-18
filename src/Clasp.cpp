@@ -41,7 +41,7 @@ int clasp_chain_seed_best(Seed_t *fragment_list, uint32_t nFragment, Chain_t &be
 	char chainmode = SOP;
 	// char chainmode = LIN;
 	// double lambda = 0.5;
-	double lambda = 0.2;
+	double lambda = 0.15;
 	double epsilon = 0;
 	double minscore = 0;
 	int maxgap = -1;
