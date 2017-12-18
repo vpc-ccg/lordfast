@@ -48,7 +48,7 @@ int						indexingMode;
 int						searchingMode;
 // int						bestMappingMode = 1;
 int 					affineMode = 0;
-int						seqCompressed;
+int						seqCompressed = 1;
 int						outCompressed;
 int						progressRep = 0;
 int						nohitDisabled = 1;
