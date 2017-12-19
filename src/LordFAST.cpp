@@ -69,7 +69,7 @@ void 				findTopWins(uint32_t chunk_overlap, SeedList *seeds, int isRev, int rea
 void 				findTopWins2(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id);
 void 				findTopWins3(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, float minScore, int id);
 void 				findTopWins4(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id);
-void                alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &map, int id);
+void                alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qual, char* qual_rev, Sam_t &map, int id);
 void 				fixCigarM(std::string &cigar, std::string semiCigar);
 void 				fixCigar(std::string &cigar, std::string semiCigar);
 void 				alignChain_ksw(Chain_t &chain, char *query, int32_t qLen, Sam_t &map);
@@ -269,23 +269,24 @@ void mapSeqMT()
 /*********************************************/
 void printSamEntry(Sam_t &map, std::ostringstream& sout)
 {
-	uint32_t chrBeg, chrEnd;
-	char *chrName;
-	int32_t chrLen;
+	if(map.flag & 4)
+	{
+		sout<< map.qName  << "\t4\t*\t0\t0\t*\t*\t0\t0\t" 
+		    << map.seq << "\t" << map.qual << "\n"; // << "\t" << "AS:i:0\n";
+	}
+	else
+	{
+		uint32_t chrBeg, chrEnd;
+		char *chrName;
+		int32_t chrLen;
 
-	bwt_get_intv_info(map.pos, map.posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
+		bwt_get_intv_info(map.pos, map.posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
 
-	// fprintf(_pf_outFile, "%s\t%u\t%u\t%u\t%c\t%s\t%u\t%u\t%u\t%c\t%f\t%f\n", read->name, readLen, 0, readLen, '+', 
-	// 	chrName, chrLen, ChrBeg, chrEnd, (_pf_topWins[id].list[i].isReverse ? '-' : '+' ), _pf_topWins[id].list[i].score, _pf_topWins[id].list[i].score2);
-	// fprintf(_pf_outFile, "%s\t%u\t%s\t%u\t50\t%s\t*\t0\t0\t%s\t%s\tAS:i:%d\n", map.qName, map.flag, 
-	// 	chrName, chrBeg + 1, map.cigar.c_str(), map.seq, map.qual, map.alnScore);
-	sout<< map.qName << "\t" << map.flag << "\t" << chrName << "\t" << chrBeg + 1 
-		<< "\t50\t" << map.cigar << "\t*\t0\t0\t" << map.seq << "\t" << map.qual << "\t"
-		<< "AS:i:" << map.alnScore << "\n";
-	// free(map.cigar);
-	// fprintf(_pf_outFile, "%s", sout.str().c_str());
-	// sout.str("");
-	// sout.clear();
+		sout<< map.qName << "\t" << map.flag << "\t" << chrName << "\t" << chrBeg + 1 
+			<< "\t50\t" << map.cigar << "\t*\t0\t0\t" << map.seq << "\t" << map.qual << "\t"
+			<< "AS:i:" << map.alnScore << "\n";
+	}
+	//
 	if(sout.tellp() > opt_outputBufferSize)
 	{
 		pthread_mutex_lock(&_pf_outputLock);
@@ -327,20 +328,16 @@ void* mapSeq(void *idp)
     	        fprintf(stderr, "\tunmapped\tshortRead\n", read->name, readLen);
 			});
 
-            outBuffer<< read->name << "\t4\t*\t0\t0\t*\t*\t0\t0\t" << read->seq << "\t" << read->qual << "\t"
-                << "AS:i:0\n";
-            if(outBuffer.tellp() > opt_outputBufferSize)
-            {
-                pthread_mutex_lock(&_pf_outputLock);
-                fprintf(_pf_outFile, "%s", outBuffer.str().c_str());
-                pthread_mutex_unlock(&_pf_outputLock);
-                outBuffer.str("");
-                outBuffer.clear();
-            }
+            _pf_topMappings[id][0].flag = 4;
+            _pf_topMappings[id][0].qName = read->name;
+            _pf_topMappings[id][0].seq = read->seq;
+            _pf_topMappings[id][0].qual = read->qual;
+			printSamEntry(_pf_topMappings[id][0], outBuffer);
             continue;
         }
 
 		reverseComplete(read->seq, seq_rev, *read->length);
+		reverse(read->qual, qual_rev, qualLen);
 
 		// extract forward-reverse seeds
 		getLocs_extend_whole_step(read->seq, readLen, SAMPLING_COUNT, _pf_seedsForward + id, _pf_seedsReverse + id);
@@ -374,7 +371,7 @@ void* mapSeq(void *idp)
 			_pf_topMappings[id][0].flag = 0;
 			_pf_topMappings[id][0].qual = read->qual;
 			
-			alignWin(_pf_topWins[id].list[0], read->seq, seq_rev, readLen, _pf_topMappings[id][0], id);
+			alignWin(_pf_topWins[id].list[0], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id][0], id);
 
 			printSamEntry(_pf_topMappings[id][0], outBuffer);
 		}
@@ -390,7 +387,7 @@ void* mapSeq(void *idp)
 				_pf_topMappings[id][i].flag = 0;
 				_pf_topMappings[id][i].qual = read->qual;
 				
-				alignWin(_pf_topWins[id].list[i], read->seq, seq_rev, readLen, _pf_topMappings[id][i], id);
+				alignWin(_pf_topWins[id].list[i], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id][i], id);
 			}
 
 			// sort the windows based on the score!
@@ -399,10 +396,15 @@ void* mapSeq(void *idp)
 			// print 
 			for(i=0; i<_pf_topWins[id].num; i++)
 			{
-				if(i > 0)
+				if(i == 0)
+				{
+					printSamEntry(_pf_topMappings[id][i], outBuffer);
+				}
+				else if((_pf_topMappings[id][i].flag & 4) == 0)
+				{
 					_pf_topMappings[id][i].flag = _pf_topMappings[id][i].flag | 256;
-
-				printSamEntry(_pf_topMappings[id][i], outBuffer);
+					printSamEntry(_pf_topMappings[id][i], outBuffer);
+				}
 			}
 		}
 	}
@@ -807,7 +809,7 @@ bool compareSam(const Sam_t& s1, const Sam_t& s2)
 }
 
 /**********************************************/
-void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &map, int id)
+void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qual, char* qual_rev, Sam_t &map, int id)
 {
 	uint32_t i;
 	uint32_t margin = rLen >> 1;
@@ -843,7 +845,17 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
 				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 
-		alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
+		if(_pf_topChains[id].list[0].chainLen > 1)
+		{
+			alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
+		}
+		else
+		{
+			// strcpy(map.cigar, "*");
+			map.flag = 4;
+			map.seq = query;
+			map.alnScore = -2 * rLen;
+		}
 	}
 	else
 	{
@@ -873,7 +885,17 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
 				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
 		
-		alignChain(_pf_topChains[id].list[0], query, rLen, map);
+		if(_pf_topChains[id].list[0].chainLen > 1)
+		{
+			alignChain(_pf_topChains[id].list[0], query, rLen, map);
+		}
+		else
+		{
+			// strcpy(map.cigar, "*");
+			map.flag = 4;
+			map.seq = query;
+			map.alnScore = -2 * rLen;
+		}
 	}
 
 	// fprintf(stderr, "win %u %u\n", win.tStart, win.tEnd);
