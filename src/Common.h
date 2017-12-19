@@ -49,6 +49,12 @@
 #include <string>
 #include <sstream>
 
+#ifdef DODEBUG 
+#define DEBUG(cmd) cmd
+#else 
+#define DEBUG(cmd)
+#endif
+
 #define SEQ_MAX_LENGTH		50000		// Seq Max Length
 #define ALIGN_SEQ_MAX_LEN 	75000
 #define CONTIG_OVERLAP		50400 		// No. of characters overlapped between contings  --  equals 2100 blocks of length 21

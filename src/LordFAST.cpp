@@ -220,7 +220,8 @@ void initFASTChunk(Read *seqList, int seqListSize)
 	// memset(_pf_refWin_cnt[id], 0, _pf_refWin_num * sizeof(uint32_t));
 	for(i = 0; i < THREAD_COUNT; i++)
 		for(j = 0; j < _pf_refWin_num; j++)
-			_pf_refWin_cnt[i][j].readIdx = _pf_seqListSize + 100;
+			_pf_refWin_cnt[i][j].readIdx = 2 * _pf_seqListSize + 10;
+			// _pf_refWin_cnt[i][j].readIdx = _pf_seqListSize + 100;
 
 	// _pf_chainList = (Chain_t**) getMem(_pf_seqListSize * sizeof(Chain_t*));
 	// _pf_chainListSize = (uint8_t*) getMem(_pf_seqListSize * sizeof(uint8_t));
@@ -316,8 +317,16 @@ void* mapSeq(void *idp)
 		readLen = (*read->length);
 		qualLen = (*read->isFq ? *read->length : 1);
 
+        DEBUG({
+            fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+		});
+
         if(readLen < CHUNK_OVERLAP)
         {
+	        DEBUG({
+    	        fprintf(stderr, "\tunmapped\tshortRead\n", read->name, readLen);
+			});
+
             outBuffer<< read->name << "\t4\t*\t0\t0\t*\t*\t0\t0\t" << read->seq << "\t" << read->qual << "\t"
                 << "AS:i:0\n";
             if(outBuffer.tellp() > opt_outputBufferSize)
@@ -340,16 +349,25 @@ void* mapSeq(void *idp)
 		// continue; // just do seeding
 		// reset number of top windows
 		_pf_topWins[id].num = 0;
-		findTopWins(readLen, _pf_seedsForward + id, 0, t, id); //find candidate paths for forward
-		findTopWins(readLen, _pf_seedsReverse + id, 1, -t, id); //find candidate paths for reverse
+		findTopWins(readLen, _pf_seedsForward + id, 0, t+1, id); //find candidate paths for forward
+		findTopWins(readLen, _pf_seedsReverse + id, 1, -(t+1), id); //find candidate paths for reverse
 
 		// sort the windows based on the score!
 		std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
+		
+        DEBUG({
+            int ilog;
+            fprintf(stderr, "\tcandidate\tnum: %d\n", _pf_topWins[id].num);
+            for(ilog = 0; ilog < _pf_topWins[id].num; ilog++)
+            {
+                fprintf(stderr, "\tcandidate %d:\t%u\t%u\t%c\t%f\n", ilog+1, _pf_topWins[id].list[ilog].tStart, _pf_topWins[id].list[ilog].tEnd,
+                (_pf_topWins[id].list[ilog].isReverse ? '-' : '+'), _pf_topWins[id].list[ilog].score);
+            }
+		});
 
-		// fprintf(stderr, ">%s length:%d\n", read->name, readLen);
 		// continue; // seeding and candidate selection
 
-		float scoreRatio = 2;
+		float scoreRatio = 4;
 		if(_pf_topWins[id].list[0].score >= scoreRatio * _pf_topWins[id].list[1].score) // significantly better window => coarse mode
 		{
 			_pf_topMappings[id][0].qName = read->name;
@@ -363,8 +381,8 @@ void* mapSeq(void *idp)
 		else // fine mode
 		{
 			_pf_topWins[id].num = 0;
-			findTopWins3(readLen, _pf_seedsForward + id, 0, t, (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for forward
-			findTopWins3(readLen, _pf_seedsReverse + id, 1, -t, (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for reverse
+			findTopWins3(readLen, _pf_seedsForward + id, 0, t+_pf_seqListSize+1, (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for forward
+			findTopWins3(readLen, _pf_seedsReverse + id, 1, -(t+_pf_seqListSize+1), (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for reverse
 
 			for(i=0; i<_pf_topWins[id].num; i++)
 			{
@@ -817,6 +835,10 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		_pf_topChains[id].num = 1;
 
+		DEBUG({
+			fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+		});
+
 		if(seedPos_Low > 2000000000)
 			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
 				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
@@ -842,6 +864,10 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, Sam_t &ma
 
 		clasp_chain_seed_best(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		_pf_topChains[id].num = 1;
+
+		DEBUG({
+			fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+		});
 
 		if(seedPos_Low > 2000000000)
 			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
