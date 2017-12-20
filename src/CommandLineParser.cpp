@@ -145,6 +145,9 @@ int parseCommandLine (int argc, char *argv[])
 	{
 		switch (o)
 		{
+			case 0:
+				fprintf(stderr, "[NOTE] option is set: %s\n", longOptions[index].name);
+				break;
 			case 'I':
 				indexingMode = 1;
 				fastaFile = optarg;
@@ -302,7 +305,7 @@ int parseCommandLine (int argc, char *argv[])
 
 	if (!indexingMode)
 	{
-		fprintf(stderr, "# Threads: %d\n", THREAD_COUNT);
+		fprintf(stderr, "[NOTE] number of threads: %d\n", THREAD_COUNT);
 		for (i = 0; i < 255; i++)
 			THREAD_ID[i] = i;
 	}
