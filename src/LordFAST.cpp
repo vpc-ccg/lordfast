@@ -60,6 +60,9 @@ int8_t 				_pf_kswMismatch = 5; // 6
 int8_t 				_pf_kswGapOpen = 2; // 10
 int8_t 				_pf_kswGapExtend = 1; // 0
 char 				_pf_kswCigarTable[] = "MIDNSHP=X";
+// parameters for split alignments
+int                 _pf_clipLen = 500;
+double              _pf_clipSim = 0.75;
 
 FILE                *_pf_outFile = NULL;
 
@@ -1344,25 +1347,95 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
 			// TODO: is -1 OK?
 			edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
-			alnScore -= edResult.editDistance;
-
-			edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
 
 			fprintf(stderr, "\tbeg\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
 
-			// if( qLen < readAlnLen - 1)
-			// {
-			// 	edCigar->push_front('S');
-			// 	// Write number of moves to cigar string.
-			// 	tmpNum = readAlnLen - 1 - qLen;
-			// 	for (; tmpNum; tmpNum /= 10)
-			// 	{
-			// 		edCigar->push_front('0' + tmpNum % 10);
-			// 	}
-			// }
+			if( readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
+			{
+                // Write number of moves to cigar string.
+                tmpNum = readAlnLen;
+                numDigits = 0;
+                for (; tmpNum; tmpNum /= 10)
+                {
+                    edCigar->push_back('0' + tmpNum % 10);
+                    numDigits++;
+                }
+                reverse(edCigar->end() - numDigits, edCigar->end());
+                // Write code of move to cigar string.
+                edCigar->push_back('S');
+                // update alignment score
+                alnScore -= readAlnLen;
 
-			// fix sam pos
-			map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                // fprintf(stderr, "\t++++++++++\n");
+
+                // uint8_t tmp_readAlnSeq[SEQ_MAX_LENGTH];
+				// uint8_t tmp_refAlnSeq[SEQ_MAX_LENGTH];
+				// uint8_t tmp_readAlnSeq_rev[SEQ_MAX_LENGTH];
+				// uint8_t tmp_refAlnSeq_rev[SEQ_MAX_LENGTH];
+				// int tmp_tLen, tmp_qLen;
+				// int tmp_cigarNum;
+				// uint32_t *tmp_cigar;
+				// int tmp_bandWidth;
+				// int tmp_alnScore = 0;
+				// uint32_t readAlnStart_new, refAlnStart_new;
+				// uint32_t readAlnEnd_new, refAlnEnd_new;
+				// int32_t readAlnLen_new, refAlnLen_new;
+
+				// /////////////////////////////////////////////////////////
+
+				// convertChar2int(tmp_readAlnSeq_rev, query, readAlnLen);
+				// reverseComplementIntStr(tmp_readAlnSeq, tmp_readAlnSeq_rev, readAlnLen);
+
+				// bwt_str_pac2int(refAlnStart, refAlnLen, tmp_refAlnSeq_rev);
+				// reverseComplementIntStr(tmp_refAlnSeq, tmp_refAlnSeq_rev, refAlnLen);
+
+				// ksw_extend(readAlnLen, tmp_readAlnSeq, refAlnLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &tmp_qLen, &tmp_tLen, 0, 0, 0);
+				// tmp_bandWidth = (tmp_qLen > tmp_tLen ? tmp_qLen : tmp_tLen);
+				// tmp_alnScore = ksw_global(tmp_qLen, tmp_readAlnSeq, tmp_tLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
+				
+                // if(tmp_qLen < readAlnLen)
+                // {
+                //     // Write number of moves to cigar string.
+                //     tmpNum = (readAlnLen - tmp_qLen);
+                //     numDigits = 0;
+                //     for (; tmpNum; tmpNum /= 10)
+                //     {
+                //         edCigar->push_back('0' + tmpNum % 10);
+                //         numDigits++;
+                //     }
+                //     reverse(edCigar->end() - numDigits, edCigar->end());
+                //     // Write code of move to cigar string.
+                //     edCigar->push_back('S');
+                // }
+                // fprintf(stderr, "\t++++++++++ %d\n", tmp_cigarNum);
+                // for (int z = tmp_cigarNum - 1; z >= 0; --z)
+                // {
+                //     // soutCigar << (tmp_cigar[z]>>4) << _pf_kswCigarTable[tmp_cigar[z]&0xf];
+                //     // Write number of moves to cigar string.
+                //     tmpNum = (tmp_cigar[z]>>4);
+                //     numDigits = 0;
+                //     for (; tmpNum; tmpNum /= 10)
+                //     {
+                //         edCigar->push_back('0' + tmpNum % 10);
+                //         numDigits++;
+                //     }
+                //     reverse(edCigar->end() - numDigits, edCigar->end());
+                //     // Write code of move to cigar string.
+                //     edCigar->push_back(_pf_kswCigarTable[tmp_cigar[z]&0xf]);
+                // }
+                // free(tmp_cigar);
+
+                // // fix sam pos
+                // map.pos = chain.seeds[0].tPos - tmp_tLen;
+			}
+            else
+            {
+                alnScore -= edResult.editDistance;
+                edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                // fix sam pos
+                map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+            }
+
 			edlibFreeAlignResult(edResult);
 		}
 		else // not enough sequence left on the chromosome to align => soft-clip
