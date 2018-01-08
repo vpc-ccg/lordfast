@@ -1372,9 +1372,9 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
 			edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 
-			fprintf(stderr, "\tbeg\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
+			// fprintf(stderr, "\tbeg\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
 
-			if( readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
+			if(readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
 			{
                 // // Write number of moves to cigar string.
                 // tmpNum = readAlnLen;
@@ -1505,74 +1505,74 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 			alnScore -= edResult.editDistance;
 
 			edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
-			fprintf(stderr, "\tmid\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\t%s\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100, 
-				readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 60 ? "################" : "");
+			// fprintf(stderr, "\tmid\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\t%s\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100, 
+			// 	readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 60 ? "################" : "");
 			edlibFreeAlignResult(edResult);
 			//
-			if(readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 30)
-			{
-				fprintf(stderr, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-			}
-			if(readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 60)
-			{
-				uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
-				uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
-				uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
-				uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
-				int tLen_ksw, qLen_ksw;
-				int tmp_cigarNum;
-				uint32_t *tmp_cigar;
-				int tmp_bandWidth;
-				int tmp_alnScore = 0;
-				uint32_t readAlnStart_new, refAlnStart_new;
-				uint32_t readAlnEnd_new, refAlnEnd_new;
-				int32_t readAlnLen_new, refAlnLen_new;
+			// if(readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 30)
+			// {
+			// 	fprintf(stderr, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+			// }
+			// if(readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 60)
+			// {
+			// 	uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
+			// 	uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
+			// 	uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+			// 	uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+			// 	int tLen_ksw, qLen_ksw;
+			// 	int tmp_cigarNum;
+			// 	uint32_t *tmp_cigar;
+			// 	int tmp_bandWidth;
+			// 	int tmp_alnScore = 0;
+			// 	uint32_t readAlnStart_new, refAlnStart_new;
+			// 	uint32_t readAlnEnd_new, refAlnEnd_new;
+			// 	int32_t readAlnLen_new, refAlnLen_new;
 
-				/////////////////////////////////////////////////////////
+			// 	/////////////////////////////////////////////////////////
 
-				convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
-				bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
+			// 	convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
+			// 	bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
 
-				ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
-				tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
-				tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
-				free(tmp_cigar);
+			// 	ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+			// 	tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
+			// 	tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
+			// 	free(tmp_cigar);
 
-				readAlnStart_new = readAlnStart + qLen_ksw;
-				refAlnStart_new = refAlnStart + tLen_ksw;
+			// 	readAlnStart_new = readAlnStart + qLen_ksw;
+			// 	refAlnStart_new = refAlnStart + tLen_ksw;
 
-				/////////////////////////////////////////////////////////
+			// 	/////////////////////////////////////////////////////////
 
-				convertChar2int(readAlnSeq_ksw_rev, query+readAlnStart, readAlnLen);
-				reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
+			// 	convertChar2int(readAlnSeq_ksw_rev, query+readAlnStart, readAlnLen);
+			// 	reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
 
-				bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
-				reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
+			// 	bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
+			// 	reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
 
-				ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
-				tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
-				tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
-				free(tmp_cigar);
+			// 	ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+			// 	tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
+			// 	tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
+			// 	free(tmp_cigar);
 
-				readAlnEnd_new = readAlnEnd - qLen_ksw;
-				refAlnEnd_new = refAlnEnd - tLen_ksw;
-				refAlnLen_new = refAlnEnd_new - refAlnStart_new;
-				readAlnLen_new = readAlnEnd_new - readAlnStart_new;
-				fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart, readAlnEnd, refAlnStart, refAlnEnd);
-				fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart_new, readAlnEnd_new, refAlnStart_new, refAlnEnd_new);
+			// 	readAlnEnd_new = readAlnEnd - qLen_ksw;
+			// 	refAlnEnd_new = refAlnEnd - tLen_ksw;
+			// 	refAlnLen_new = refAlnEnd_new - refAlnStart_new;
+			// 	readAlnLen_new = readAlnEnd_new - readAlnStart_new;
+			// 	fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart, readAlnEnd, refAlnStart, refAlnEnd);
+			// 	fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart_new, readAlnEnd_new, refAlnStart_new, refAlnEnd_new);
 
-				/////////////////////////////////////////////////////////
+			// 	/////////////////////////////////////////////////////////
 
-				if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
-				{
-					bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
-					reverseComplete(refAlnSeq, tmpAlnSeq, refAlnLen_new);
-					edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, tmpAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-					fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
-					edlibFreeAlignResult(edResult);	
-				}
+			// 	if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
+			// 	{
+			// 		bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
+			// 		reverseComplete(refAlnSeq, tmpAlnSeq, refAlnLen_new);
+			// 		edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, tmpAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+			// 		fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
+			// 		edlibFreeAlignResult(edResult);	
+			// 	}
 
-			}
+			// }
 		}
 		else // no need to do smith-waterman, either insertion or deletion!
 		{
@@ -1647,14 +1647,37 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 		{
 			refAlnStart = chain.seeds[i].tPos + chain.seeds[i].len;
 			bwt_str_pac2char(refAlnStart, refAlnLen, refAlnSeq);
-
-			// TODO: is -1 OK?
+            
 			edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
-			alnScore -= edResult.editDistance;
+			
+            fprintf(stderr, "\tend\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
 
-			edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+            if(readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
+            {
+                // here we do clipping
+                fprintf(stderr, "+++++++++++++\n");
 
-			fprintf(stderr, "\tend\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
+                // Write number of moves to cigar string.
+                tmpNum = readAlnLen;
+                numDigits = 0;
+                for (; tmpNum; tmpNum /= 10)
+                {
+                    edCigar->push_back('0' + tmpNum % 10);
+                    numDigits++;
+                }
+                reverse(edCigar->end() - numDigits, edCigar->end());
+                // Write code of move to cigar string.
+                edCigar->push_back('S');
+                // update alignment score
+                alnScore -= readAlnLen;
+            }
+            else
+            {
+                alnScore -= edResult.editDistance;
+                edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                // fix sam posEnd
+                map.posEnd = refAlnStart + edResult.endLocations[0];
+            }
 
 			// if( qLen < readAlnLen - 1)
 			// {
@@ -1668,8 +1691,6 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 			// 	}
 			// }
 
-			// fix sam posEnd
-			map.posEnd = refAlnStart + edResult.endLocations[0];
 			edlibFreeAlignResult(edResult);
 		}
 		else // not enough sequence left on the chromosome to align => soft-clip
