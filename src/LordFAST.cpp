@@ -54,11 +54,16 @@ int 				_pf_maxChain = 10;
 
 uint8_t				_pf_char2int[128];
 int8_t 				_pf_kswMatrix[25];
+int8_t 				_pf_kswMatrix_clip[25];
 // TODO: tune score parameters
 int8_t 				_pf_kswMatch = 2; // 5
 int8_t 				_pf_kswMismatch = 5; // 6
 int8_t 				_pf_kswGapOpen = 2; // 10
 int8_t 				_pf_kswGapExtend = 1; // 0
+int8_t 				_pf_kswMatch_clip = 1;
+int8_t 				_pf_kswMismatch_clip = 1;
+int8_t 				_pf_kswGapOpen_clip = 0;
+int8_t 				_pf_kswGapExtend_clip = 1;
 char 				_pf_kswCigarTable[] = "MIDNSHP=X";
 // parameters for split alignments
 int                 _pf_clipLen = 500;
@@ -144,6 +149,17 @@ void initializeFAST()
 	}
 	for (j=0; j<5; ++j)
 		_pf_kswMatrix[k++] = 0;
+	// initialize scoring matrix (from ksw.c)
+	for (i=0, k=0; i<4; ++i)
+	{
+		for (j=0; j<4; ++j)
+		{
+			_pf_kswMatrix_clip[k++] = (i==j ? _pf_kswMatch_clip : -_pf_kswMismatch_clip);
+		}
+		_pf_kswMatrix_clip[k++] = 0; // ambiguous base
+	}
+	for (j=0; j<5; ++j)
+		_pf_kswMatrix_clip[k++] = 0;
 
 	// initialize output
 	if(strlen(outputMap) == 0)
@@ -962,7 +978,7 @@ void fixCigar(std::string &cigar, std::string semiCigar)
 {
 	std::istringstream sin(semiCigar);
 	std::ostringstream sout;
-	int n, cntCh = 0;
+	int n, cntCh = 0, operationNum = 0;
 	char c, ch = 'Z';
 	while(sin >> n >> c)
 	{
@@ -974,16 +990,17 @@ void fixCigar(std::string &cigar, std::string semiCigar)
 		{
 			if(cntCh)
 			{
-				sout<< cntCh << ch;
+				sout<< cntCh << ( operationNum == 1 && ch == 'I' ? 'S' : ch);
 				cntCh = 0;
 			}
 			cntCh = n;
 			ch = c;
+            operationNum++;
 		}
 	}
-	if(cntCh)
+	if(cntCh) // last CIGAR operation
 	{
-		sout<< cntCh << ch;
+		sout<< cntCh << ( ch == 'I' ? 'S' : ch);
 	}
 	cigar = sout.str();
 }
@@ -1292,19 +1309,27 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 {
 	int i;
 	int j;
-
+    // for edlib
 	char readAlnSeq[SEQ_MAX_LENGTH];
 	char refAlnSeq[SEQ_MAX_LENGTH];
 	char tmpAlnSeq[SEQ_MAX_LENGTH];
 	uint32_t readAlnStart, refAlnStart;
 	uint32_t readAlnEnd, refAlnEnd;
 	int32_t readAlnLen, refAlnLen;
-	// int tLen, qLen;
-	// int cigarNum;
-	// uint32_t *cigar;
-	// int bandWidth;
-	// std::ostringstream soutCigar;
-	// std::istringstream sinCigar;
+    // for ksw
+    uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
+    uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
+    uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+    uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+    int tLen_ksw, qLen_ksw;
+    // int tmp_cigarNum;
+    // uint32_t *tmp_cigar;
+    // int tmp_bandWidth;
+    // int tmp_alnScore = 0;
+    // uint32_t readAlnStart_new, refAlnStart_new;
+    // uint32_t readAlnEnd_new, refAlnEnd_new;
+    // int32_t readAlnLen_new, refAlnLen_new;
+
 	std::string alnCigar;
 	int alnScore = 0;
 	EdlibAlignResult edResult;
@@ -1345,88 +1370,62 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 			bwt_str_pac2char(refAlnStart, refAlnLen, tmpAlnSeq);
 			reverseComplete(tmpAlnSeq, refAlnSeq, refAlnLen);
 
-			// TODO: is -1 OK?
 			edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 
 			fprintf(stderr, "\tbeg\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
 
 			if( readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
 			{
-                // Write number of moves to cigar string.
-                tmpNum = readAlnLen;
-                numDigits = 0;
-                for (; tmpNum; tmpNum /= 10)
+                // // Write number of moves to cigar string.
+                // tmpNum = readAlnLen;
+                // numDigits = 0;
+                // for (; tmpNum; tmpNum /= 10)
+                // {
+                //     edCigar->push_back('0' + tmpNum % 10);
+                //     numDigits++;
+                // }
+                // reverse(edCigar->end() - numDigits, edCigar->end());
+                // // Write code of move to cigar string.
+                // edCigar->push_back('S');
+                // // update alignment score
+                // alnScore -= readAlnLen;
+
+				convertChar2int(readAlnSeq_ksw_rev, query, readAlnLen);
+				reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
+
+				bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
+				reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
+
+				ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+                
+                if(qLen_ksw < readAlnLen) // perform a new edlib alignment with new coordinates
                 {
-                    edCigar->push_back('0' + tmpNum % 10);
-                    numDigits++;
+			        edlibFreeAlignResult(edResult); // free old results
+                    edResult = edlibAlign(readAlnSeq, qLen_ksw, refAlnSeq, tLen_ksw, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                    // update score
+                    alnScore -= edResult.editDistance;
+                    // fix sam pos
+                    map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+
+                    // Write code of move to cigar string.
+			        edCigar->push_front('I');
+                    // Write number of moves to cigar string.
+                    tmpNum = (readAlnLen - qLen_ksw);
+                    for (; tmpNum; tmpNum /= 10)
+                    {
+                        edCigar->push_front('0' + tmpNum % 10);
+                    }
+                    // update score
+                    alnScore -= (readAlnLen - qLen_ksw);
                 }
-                reverse(edCigar->end() - numDigits, edCigar->end());
-                // Write code of move to cigar string.
-                edCigar->push_back('S');
-                // update alignment score
-                alnScore -= readAlnLen;
-
-                // fprintf(stderr, "\t++++++++++\n");
-
-                // uint8_t tmp_readAlnSeq[SEQ_MAX_LENGTH];
-				// uint8_t tmp_refAlnSeq[SEQ_MAX_LENGTH];
-				// uint8_t tmp_readAlnSeq_rev[SEQ_MAX_LENGTH];
-				// uint8_t tmp_refAlnSeq_rev[SEQ_MAX_LENGTH];
-				// int tmp_tLen, tmp_qLen;
-				// int tmp_cigarNum;
-				// uint32_t *tmp_cigar;
-				// int tmp_bandWidth;
-				// int tmp_alnScore = 0;
-				// uint32_t readAlnStart_new, refAlnStart_new;
-				// uint32_t readAlnEnd_new, refAlnEnd_new;
-				// int32_t readAlnLen_new, refAlnLen_new;
-
-				// /////////////////////////////////////////////////////////
-
-				// convertChar2int(tmp_readAlnSeq_rev, query, readAlnLen);
-				// reverseComplementIntStr(tmp_readAlnSeq, tmp_readAlnSeq_rev, readAlnLen);
-
-				// bwt_str_pac2int(refAlnStart, refAlnLen, tmp_refAlnSeq_rev);
-				// reverseComplementIntStr(tmp_refAlnSeq, tmp_refAlnSeq_rev, refAlnLen);
-
-				// ksw_extend(readAlnLen, tmp_readAlnSeq, refAlnLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &tmp_qLen, &tmp_tLen, 0, 0, 0);
-				// tmp_bandWidth = (tmp_qLen > tmp_tLen ? tmp_qLen : tmp_tLen);
-				// tmp_alnScore = ksw_global(tmp_qLen, tmp_readAlnSeq, tmp_tLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
-				
-                // if(tmp_qLen < readAlnLen)
-                // {
-                //     // Write number of moves to cigar string.
-                //     tmpNum = (readAlnLen - tmp_qLen);
-                //     numDigits = 0;
-                //     for (; tmpNum; tmpNum /= 10)
-                //     {
-                //         edCigar->push_back('0' + tmpNum % 10);
-                //         numDigits++;
-                //     }
-                //     reverse(edCigar->end() - numDigits, edCigar->end());
-                //     // Write code of move to cigar string.
-                //     edCigar->push_back('S');
-                // }
-                // fprintf(stderr, "\t++++++++++ %d\n", tmp_cigarNum);
-                // for (int z = tmp_cigarNum - 1; z >= 0; --z)
-                // {
-                //     // soutCigar << (tmp_cigar[z]>>4) << _pf_kswCigarTable[tmp_cigar[z]&0xf];
-                //     // Write number of moves to cigar string.
-                //     tmpNum = (tmp_cigar[z]>>4);
-                //     numDigits = 0;
-                //     for (; tmpNum; tmpNum /= 10)
-                //     {
-                //         edCigar->push_back('0' + tmpNum % 10);
-                //         numDigits++;
-                //     }
-                //     reverse(edCigar->end() - numDigits, edCigar->end());
-                //     // Write code of move to cigar string.
-                //     edCigar->push_back(_pf_kswCigarTable[tmp_cigar[z]&0xf]);
-                // }
-                // free(tmp_cigar);
-
-                // // fix sam pos
-                // map.pos = chain.seeds[0].tPos - tmp_tLen;
+                else // use the already calculated results
+                {
+                    alnScore -= edResult.editDistance;
+                    edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                    // fix sam pos
+                    map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                }
 			}
             else
             {
@@ -1516,11 +1515,11 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 			}
 			if(readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 60)
 			{
-				uint8_t tmp_readAlnSeq[SEQ_MAX_LENGTH];
-				uint8_t tmp_refAlnSeq[SEQ_MAX_LENGTH];
-				uint8_t tmp_readAlnSeq_rev[SEQ_MAX_LENGTH];
-				uint8_t tmp_refAlnSeq_rev[SEQ_MAX_LENGTH];
-				int tmp_tLen, tmp_qLen;
+				uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
+				uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
+				uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+				uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+				int tLen_ksw, qLen_ksw;
 				int tmp_cigarNum;
 				uint32_t *tmp_cigar;
 				int tmp_bandWidth;
@@ -1531,32 +1530,32 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
 				/////////////////////////////////////////////////////////
 
-				convertChar2int(tmp_readAlnSeq, query+readAlnStart, readAlnLen);
-				bwt_str_pac2int(refAlnStart, refAlnLen, tmp_refAlnSeq);
+				convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
+				bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
 
-				ksw_extend(readAlnLen, tmp_readAlnSeq, refAlnLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &tmp_qLen, &tmp_tLen, 0, 0, 0);
-				tmp_bandWidth = (tmp_qLen > tmp_tLen ? tmp_qLen : tmp_tLen);
-				tmp_alnScore = ksw_global(tmp_qLen, tmp_readAlnSeq, tmp_tLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
+				ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+				tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
+				tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
 				free(tmp_cigar);
 
-				readAlnStart_new = readAlnStart + tmp_qLen;
-				refAlnStart_new = refAlnStart + tmp_tLen;
+				readAlnStart_new = readAlnStart + qLen_ksw;
+				refAlnStart_new = refAlnStart + tLen_ksw;
 
 				/////////////////////////////////////////////////////////
 
-				convertChar2int(tmp_readAlnSeq_rev, query+readAlnStart, readAlnLen);
-				reverseComplementIntStr(tmp_readAlnSeq, tmp_readAlnSeq_rev, readAlnLen);
+				convertChar2int(readAlnSeq_ksw_rev, query+readAlnStart, readAlnLen);
+				reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
 
-				bwt_str_pac2int(refAlnStart, refAlnLen, tmp_refAlnSeq_rev);
-				reverseComplementIntStr(tmp_refAlnSeq, tmp_refAlnSeq_rev, refAlnLen);
+				bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
+				reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
 
-				ksw_extend(readAlnLen, tmp_readAlnSeq, refAlnLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &tmp_qLen, &tmp_tLen, 0, 0, 0);
-				tmp_bandWidth = (tmp_qLen > tmp_tLen ? tmp_qLen : tmp_tLen);
-				tmp_alnScore = ksw_global(tmp_qLen, tmp_readAlnSeq, tmp_tLen, tmp_refAlnSeq, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
+				ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+				tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
+				tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
 				free(tmp_cigar);
 
-				readAlnEnd_new = readAlnEnd - tmp_qLen;
-				refAlnEnd_new = refAlnEnd - tmp_tLen;
+				readAlnEnd_new = readAlnEnd - qLen_ksw;
+				refAlnEnd_new = refAlnEnd - tLen_ksw;
 				refAlnLen_new = refAlnEnd_new - refAlnStart_new;
 				readAlnLen_new = readAlnEnd_new - readAlnStart_new;
 				fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart, readAlnEnd, refAlnStart, refAlnEnd);
