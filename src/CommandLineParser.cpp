@@ -240,11 +240,11 @@ int parseCommandLine (int argc, char *argv[])
 		return 1;
 	}
 
-	if(SAMPLING_COUNT > SAMPLING_INTERVAL)
-	{
-		fprintf(stderr, "[parseCommandLine] ERROR: Seed count cannot be higher than segment length\n");
-		return 1;
-	}
+	// if(SAMPLING_COUNT > SAMPLING_INTERVAL)
+	// {
+	// 	fprintf(stderr, "[parseCommandLine] ERROR: Seed count cannot be higher than segment length\n");
+	// 	return 1;
+	// }
 
 	// if (MAX_MEMORY < 4)
 	// 	fprintf(stderr, "ERROR: At least 4 GB of memory is required for running pacFAST\n");
