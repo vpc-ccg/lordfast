@@ -337,9 +337,9 @@ void* mapSeq(void *idp)
 		readLen = (*read->length);
 		qualLen = (*read->isFq ? *read->length : 1);
 
-        // DEBUG({
+        DEBUG({
             fprintf(stderr, ">%s length:%d\n", read->name, readLen);
-		// });
+		});
 
         if(readLen < CHUNK_OVERLAP)
         {
@@ -866,7 +866,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 
 		if(_pf_topChains[id].list[0].chainLen > 1)
 		{
-			fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+			// fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
 			alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
 		}
 		else
@@ -907,7 +907,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 		
 		if(_pf_topChains[id].list[0].chainLen > 1)
 		{
-			fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+			// fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
 			alignChain(_pf_topChains[id].list[0], query, rLen, map);
 		}
 		else
@@ -1398,7 +1398,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
 				ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
                 
-                if(qLen_ksw < readAlnLen) // perform a new edlib alignment with new coordinates
+                if(qLen_ksw > 0 && qLen_ksw < readAlnLen) // perform a new edlib alignment with new coordinates
                 {
 			        edlibFreeAlignResult(edResult); // free old results
                     edResult = edlibAlign(readAlnSeq, qLen_ksw, refAlnSeq, tLen_ksw, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
@@ -1650,13 +1650,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
             
 			edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 			
-            fprintf(stderr, "\tend\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
+            // fprintf(stderr, "\tend\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
 
             if(readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
             {
-                // here we do clipping
-                fprintf(stderr, "+++++++++++++\n");
-
                 // // Write number of moves to cigar string.
                 // tmpNum = readAlnLen;
                 // numDigits = 0;
@@ -1675,10 +1672,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 				bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
 
 				ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
-                if(qLen_ksw < readAlnLen) // perform a new edlib alignment with new coordinates
+                if(qLen_ksw > 0 && qLen_ksw < readAlnLen) // perform a new edlib alignment with new coordinates
                 {
 			        edlibFreeAlignResult(edResult); // free old results
-                    edResult = edlibAlign(readAlnSeq, qLen_ksw, refAlnSeq, tLen_ksw, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    edResult = edlibAlign(query+readAlnStart, qLen_ksw, refAlnSeq, tLen_ksw, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
                     edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                     // update score
                     alnScore -= edResult.editDistance;
