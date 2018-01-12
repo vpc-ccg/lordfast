@@ -28,8 +28,8 @@
 
 #include "LordFAST.h"
 
-#define SOP 	((unsigned char) (0 << 0))
-#define LIN	((unsigned char) (1 << 0))
+#define SOP     ((unsigned char) (0 << 0))
+#define LIN     ((unsigned char) (1 << 0))
 #define VERSION "1.1"
 
 /* Typedef */
@@ -60,8 +60,8 @@ typedef struct {
 // extern "C" {
 // #endif
 
-int clasp_chain_seed_best(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain);
-// int clasp_chain_seed_top(Seed_t *fragment_list, uint32_t nFragment, Chain_t *chainList, uint8_t *chainNum, int maxChain, int isReverse);
+int chain_seeds_clasp(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain);
+void chain_seeds_n2(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain);
 
 // #ifdef __cplusplus
 // }
