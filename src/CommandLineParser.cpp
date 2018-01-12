@@ -75,8 +75,7 @@ unsigned int			CONTIG_MAX_SIZE;
 unsigned int			THREAD_COUNT = 1;
 double					MAX_MEMORY = 4;// GB
 int						THREAD_ID[255];
-
-
+chainAlg_t              chainAlg = CHAIN_ALG_CLASP;
 
 #if (defined(__MACH__) && defined(__APPLE__))
 #include <mach-o/getsect.h>
@@ -84,7 +83,6 @@ int						THREAD_ID[255];
 extern char _binary_HELP_start;
 extern char _binary_HELP_end;
 #endif
-
 
 void printHelp()
 {
@@ -106,6 +104,7 @@ int parseCommandLine (int argc, char *argv[])
 	char *fastaFile = NULL;
 	char *fastaOutputFile = NULL;
 	char *indexFile = NULL;
+    std::string optarg_str;
 
 	// mappingOutput = (char*) getMem(FILE_NAME_LENGTH);
 	// mappingOutputPath = (char*) getMem(FILE_NAME_LENGTH);
@@ -132,6 +131,7 @@ int parseCommandLine (int argc, char *argv[])
 		{"err",						required_argument,  0,					'e'},
 		{"maxRefHit",				required_argument,  0,					'm'},
 		{"numMap",					required_argument,  0,					'n'},
+        {"chainAlg",				required_argument,  0,					'A'},
 		{"help",					no_argument,		0,					'h'},
 		{"version",					no_argument,		0,					'v'},
 		// {"sl",						required_argument,  0,					'l'},
@@ -141,7 +141,7 @@ int parseCommandLine (int argc, char *argv[])
 
 
 
-	while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:l:c:e:m:n:hv", longOptions, &index))!= -1 )
+	while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:l:c:e:m:n:A:hv", longOptions, &index))!= -1 )
 	{
 		switch (o)
 		{
@@ -193,6 +193,30 @@ int parseCommandLine (int argc, char *argv[])
 			// case 'n':
 			// 	maxHits = atoi(optarg);
 			// 	break;
+            case 'A':
+                optarg_str = optarg;
+                if(optarg_str == "clasp")
+                {
+                    chainAlg = CHAIN_ALG_CLASP;
+                }
+                else if(optarg_str == "dp-n2")
+                {
+                    chainAlg = CHAIN_ALG_DPN2;
+                }
+                else if(optarg_str == "lis-n2")
+                {
+                    chainAlg = CHAIN_ALG_LISN2;
+                }
+                else if(optarg_str == "lis-nlogn")
+                {
+                    chainAlg = CHAIN_ALG_LISNLOGN;
+                }
+                else
+                {
+                    fprintf(stderr, "Unknown argument for chainAlg. Using clasp algorithm!\n");
+                    chainAlg = CHAIN_ALG_CLASP;
+                }
+				break;
 			case 'h':
 				printHelp();
 				exit(EXIT_SUCCESS);

@@ -534,17 +534,24 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 			}
 		}
 
-        if(seedPos_Low > 2000000000)
-            for(i = 0; i < _pf_seedsSelected[id].num; i++)
-                _pf_seedsSelected[id].list[i].tPos -= 2000000000;
+        if(chainAlg == CHAIN_ALG_CLASP)
+        {
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_seedsSelected[id].num; i++)
+                    _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		retScore = _pf_topChains[id].list[0].score;
-
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+            chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+            
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+                    _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+        }
+        else if(chainAlg == CHAIN_ALG_DPN2)
+        {
+		    chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+        }
+        
+        retScore = _pf_topChains[id].list[0].score;
 	}
 	else
 	{
@@ -557,17 +564,24 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 			}
 		}
 
-        if(seedPos_Low > 2000000000)
-            for(i = 0; i < _pf_seedsSelected[id].num; i++)
-                _pf_seedsSelected[id].list[i].tPos -= 2000000000;
+        if(chainAlg == CHAIN_ALG_CLASP)
+        {
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_seedsSelected[id].num; i++)
+                    _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		retScore = _pf_topChains[id].list[0].score;
+            chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+                    _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+        }
+        else if(chainAlg == CHAIN_ALG_DPN2)
+        {
+            chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+        }
+
+        retScore = _pf_topChains[id].list[0].score;
 	}
 	return retScore;
 }
@@ -851,21 +865,28 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 			}
 		}
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_seedsSelected[id].num; i++)
-				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
+        if(chainAlg == CHAIN_ALG_CLASP)
+        {
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_seedsSelected[id].num; i++)
+                    _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		_pf_topChains[id].num = 1;
+            chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
-		DEBUG({
-			fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
-		});
+            DEBUG({
+                fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+            });
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+                    _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+        }
+        else if(chainAlg == CHAIN_ALG_DPN2)
+        {
+            chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+        }
+        
+        // _pf_topChains[id].num = 1;
 
 		if(_pf_topChains[id].list[0].chainLen > 1)
 		{
@@ -893,21 +914,28 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 			}
 		}
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_seedsSelected[id].num; i++)
-				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
+        if(chainAlg == CHAIN_ALG_CLASP)
+        {
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_seedsSelected[id].num; i++)
+                    _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
-		_pf_topChains[id].num = 1;
+            chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
-		DEBUG({
-			fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
-		});
+            DEBUG({
+                fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+            });
 
-		if(seedPos_Low > 2000000000)
-			for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
-				_pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+            if(seedPos_Low > 2000000000)
+                for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
+                    _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
+        }
+        else if(chainAlg == CHAIN_ALG_DPN2)
+        {
+            chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+        }
+
+        // _pf_topChains[id].num = 1;
 		
 		if(_pf_topChains[id].list[0].chainLen > 1)
 		{
