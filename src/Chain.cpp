@@ -23,7 +23,7 @@ extern "C" {
 #include <algorithm>
 #include <deque>
 
-#include "Clasp.h"
+#include "Chain.h"
 
 unsigned char mute = 0;
 extern double maxmem;

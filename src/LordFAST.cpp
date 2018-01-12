@@ -19,7 +19,7 @@
 // #include "PacFAST-BWT.h"
 #include "LordFAST.h"
 #include "BWT.h"
-#include "Clasp.h"
+#include "Chain.h"
 
 #include "ksw.h"
 #include "edlib.h"
@@ -538,7 +538,8 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
             for(i = 0; i < _pf_seedsSelected[id].num; i++)
                 _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		retScore = _pf_topChains[id].list[0].score;
 
 		if(seedPos_Low > 2000000000)
@@ -560,7 +561,8 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
             for(i = 0; i < _pf_seedsSelected[id].num; i++)
                 _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		retScore = _pf_topChains[id].list[0].score;
 
 		if(seedPos_Low > 2000000000)
@@ -853,7 +855,8 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 			for(i = 0; i < _pf_seedsSelected[id].num; i++)
 				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		_pf_topChains[id].num = 1;
 
 		DEBUG({
@@ -894,7 +897,8 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 			for(i = 0; i < _pf_seedsSelected[id].num; i++)
 				_pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
-		chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		// chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+		chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 		_pf_topChains[id].num = 1;
 
 		DEBUG({

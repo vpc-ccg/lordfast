@@ -26,7 +26,7 @@ LORDFASTOBJ   = $(SRCDIR)/baseFAST.o \
                $(SRCDIR)/Reads.o \
                $(SRCDIR)/BWT.o \
                $(SRCDIR)/LordFAST.o \
-               $(SRCDIR)/Clasp.o \
+               $(SRCDIR)/Chain.o \
                $(EDLIBDIR)/edlib.o \
                HELP.o \
 
