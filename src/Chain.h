@@ -34,26 +34,26 @@
 
 /* Typedef */
 typedef struct {
-  char *infilename;
-  char *outfilename;
-  FILE *dev;
-  Container *fragments;
-  Container *lines;
-  Container *subject;
-  unsigned char chainmode;
-  double lambda;
-  double epsilon;
-  double minscore;
-  int maxgap;
-  Uint minfrag;
-  Uint colnum;
-  Uint* colorder;
-  Uint* idcol;
-  int idcolnum;
-  BOOL outputc;
-  BOOL outputf;
-  BOOL outputm;
-  BOOL outputorig;
+    char *infilename;
+    char *outfilename;
+    FILE *dev;
+    Container *fragments;
+    Container *lines;
+    Container *subject;
+    unsigned char chainmode;
+    double lambda;
+    double epsilon;
+    double minscore;
+    int maxgap;
+    Uint minfrag;
+    Uint colnum;
+    Uint* colorder;
+    Uint* idcol;
+    int idcolnum;
+    BOOL outputc;
+    BOOL outputf;
+    BOOL outputm;
+    BOOL outputorig;
 } claspinfo_t;
 
 // #ifdef __cplusplus
