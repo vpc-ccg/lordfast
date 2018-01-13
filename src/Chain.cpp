@@ -22,6 +22,7 @@ extern "C" {
 
 #include <algorithm>
 #include <deque>
+#include <math.h>
 
 #include "Chain.h"
 
@@ -204,14 +205,14 @@ int chain_seeds_clasp(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestCh
 
 inline double score_alpha(int distR, int distT, int seedLen)
 {
-    return 0.55 * seedLen;
+    return seedLen;
 }
 
 inline double score_betha(int distR, int distT, int seedLen)
 {
     int maxD = distR < distT ? distT : distR;
     int minD = distR < distT ? distR : distT;
-    return 0.2 * (maxD - minD) + 0 * minD;
+    return 0.15 * (maxD - minD) + 0 * minD;
 }
 
 bool compare_seed(Seed_t a, Seed_t b)
