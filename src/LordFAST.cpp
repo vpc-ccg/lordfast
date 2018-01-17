@@ -40,7 +40,8 @@ SeedList            *_pf_seedsSelected;
 
 WinList             *_pf_topWins;
 ChainList           *_pf_topChains;
-Sam_t               **_pf_topMappings;
+// Sam_t               **_pf_topMappings;
+MapInfo             *_pf_topMappings;
 
 WinCount_t          **_pf_refWin_cnt;
 uint32_t            _pf_refWin_num;
@@ -68,6 +69,8 @@ char                _pf_kswCigarTable[] = "MIDNSHP=X";
 // parameters for split alignments
 int                 _pf_clipLen = 500;
 double              _pf_clipSim = 0.75;
+int                 _pf_splitLen = 500;
+double              _pf_splitSim = 0.40;
 
 FILE                *_pf_outFile = NULL;
 
@@ -77,12 +80,12 @@ void                findTopWins_coarse(uint32_t chunk_overlap, SeedList *seeds, 
 // void                findTopWins2(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id);
 void                findTopWins_fine(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, float minScore, int id);
 // void                findTopWins4(uint32_t chunk_overlap, SeedList *seeds, int isRev, int readIdx, int id);
-void                alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qual, char* qual_rev, Sam_t &map, int id);
+void                alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qual, char* qual_rev, SamList_t &map, int id);
 void                fixCigarM(std::string &cigar, std::string semiCigar);
 void                fixCigar(std::string &cigar, std::string semiCigar);
-void                alignChain_ksw(Chain_t &chain, char *query, int32_t qLen, Sam_t &map);
-void                alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map);
-void                (*alignChain)(Chain_t &chain, char *query, int32_t readLen, Sam_t &map);
+void                alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, int isRev, SamList_t &map);
+void                alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, SamList_t &map);
+void                (*alignChain)(Chain_t &chain, char *query, int32_t readLen, int isRev, SamList_t &map);
 
 /**********************************************/
 void initializeFAST()
@@ -98,7 +101,8 @@ void initializeFAST()
 //  _pf_bwtLocs_tmp   = (uint32_t**) getMem(THREAD_COUNT * sizeof(uint32_t*));
     _pf_topWins       = (WinList*)   getMem(THREAD_COUNT * sizeof(WinList));
     _pf_topChains     = (ChainList*) getMem(THREAD_COUNT * sizeof(ChainList));
-    _pf_topMappings   = (Sam_t**)    getMem(THREAD_COUNT * sizeof(Sam_t*));
+    // _pf_topMappings   = (Sam_t**)    getMem(THREAD_COUNT * sizeof(Sam_t*));
+    _pf_topMappings   = new MapInfo[THREAD_COUNT];
 
     // _pf_refGenBWTLen = bwt_get_refGenBWTLen();
     // _pf_refWin_num = _pf_refGenBWTLen / CHUNK_OVERLAP; // TODO: decide about number of windows based on the minimum read length
@@ -119,11 +123,12 @@ void initializeFAST()
         {
             _pf_topChains[i].list[j].seeds = (Seed_t*) getMem(SEQ_MAX_LENGTH * sizeof(Seed_t));
         }
-        _pf_topMappings[i]        = (Sam_t*)    getMem(_pf_maxWin * sizeof(Sam_t));
-        for(j=0; j<_pf_maxWin; j++)
-        {
-            _pf_topMappings[i][j].cigar = (char*) getMem(2 * SEQ_MAX_LENGTH * sizeof(char));
-        }
+        // _pf_topMappings[i]        = (Sam_t*)    getMem(_pf_maxWin * sizeof(Sam_t));
+        _pf_topMappings[i].mappings  = new SamList_t[_pf_maxWin];
+        // for(j=0; j<_pf_maxWin; j++)
+        // {
+        //     _pf_topMappings[i][j].cigar = (char*) getMem(2 * SEQ_MAX_LENGTH * sizeof(char));
+        // }
     }
 
 //  // get referenece 
@@ -197,10 +202,10 @@ void finalizeFAST()
         {
             freeMem(_pf_topChains[i].list[j].seeds, SEQ_MAX_LENGTH * sizeof(Seed_t));
         }
-        for(j=0; j<_pf_maxWin; j++)
-        {
-            freeMem(_pf_topMappings[i][j].cigar, 2 * SEQ_MAX_LENGTH * sizeof(char));
-        }
+        // for(j=0; j<_pf_maxWin; j++)
+        // {
+        //     freeMem(_pf_topMappings[i][j].cigar, 2 * SEQ_MAX_LENGTH * sizeof(char));
+        // }
         freeMem(_pf_refWin_cnt[i], _pf_refWin_num * sizeof(WinCount_t));
         // freeMem(_pf_seedsFR[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
         freeMem(_pf_seedsForward[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
@@ -209,7 +214,8 @@ void finalizeFAST()
 //      freeMem(_pf_bwtLocs_tmp[i], MAX_NUM_HITS * sizeof(uint32_t));
         freeMem(_pf_topWins[i].list, _pf_maxWin * sizeof(Win_t));
         freeMem(_pf_topChains[i].list, _pf_maxChain * sizeof(Chain_t));
-        freeMem(_pf_topMappings[i], _pf_maxWin * sizeof(Sam_t));
+        // freeMem(_pf_topMappings[i], _pf_maxWin * sizeof(Sam_t));
+        delete[] _pf_topMappings[i].mappings;
     }
 
     freeMem(_pf_threads, THREAD_COUNT * sizeof(pthread_t));
@@ -221,7 +227,8 @@ void finalizeFAST()
 //  freeMem(_pf_bwtLocs_tmp, THREAD_COUNT * sizeof(uint32_t*));
     freeMem(_pf_topWins, THREAD_COUNT * sizeof(WinList));
     freeMem(_pf_topChains, THREAD_COUNT * sizeof(ChainList));
-    freeMem(_pf_topMappings, THREAD_COUNT * sizeof(Sam_t*));
+    // freeMem(_pf_topMappings, THREAD_COUNT * sizeof(Sam_t*));
+    delete[] _pf_topMappings;
 
     // finalize output
     if(strlen(outputMap) > 0)
@@ -286,24 +293,46 @@ void mapSeqMT()
     return;
 }
 /*********************************************/
-void printSamEntry(Sam_t &map, std::ostringstream& sout)
+void printSamEntry(MapInfo &map, int num, std::ostringstream& sout)
 {
-    if(map.flag & 4)
-    {
-        sout<< map.qName  << "\t4\t*\t0\t0\t*\t*\t0\t0\t" 
-            << map.seq << "\t" << map.qual << "\n"; // << "\t" << "AS:i:0\n";
-    }
-    else
-    {
-        uint32_t chrBeg, chrEnd;
-        char *chrName;
-        int32_t chrLen;
+    int i, j;
+    uint32_t chrBeg, chrEnd;
+    char *chrName;
+    int32_t chrLen;
 
-        bwt_get_intv_info(map.pos, map.posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
-
-        sout<< map.qName << "\t" << map.flag << "\t" << chrName << "\t" << chrBeg + 1 
-            << "\t50\t" << map.cigar << "\t*\t0\t0\t" << map.seq << "\t" << map.qual << "\t"
-            << "AS:i:" << map.alnScore << "\n";
+    for(i = 0; i < num; i++)
+    {
+        if(i == 0) // first mapping should be printed anyway (mapped or un-mapped)
+        {
+            if(map.mappings[i].samList.size() > 0) // mapped
+            {
+                for(j = 0; j < map.mappings[i].samList.size(); j++)
+                {
+                    bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
+                    //
+                    sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
+                        << "\t50\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
+                }
+            }
+            else // un-mapped
+            {
+                sout<< map.qName  << "\t4\t*\t0\t0\t*\t*\t0\t0\t" 
+                    << map.seq << "\t" << map.qual << "\n";
+            }
+        }
+        else
+        {
+            for(j = 0; j < map.mappings[i].samList.size(); j++)
+            {
+                map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
+                bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
+                //
+                sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
+                    << "\t50\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+                    << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
+            }
+        }
     }
     //
     if(sout.tellp() > opt_outputBufferSize)
@@ -337,6 +366,10 @@ void* mapSeq(void *idp)
         readLen = (*read->length);
         qualLen = (*read->isFq ? *read->length : 1);
 
+        _pf_topMappings[id].qName  = read->name;
+        _pf_topMappings[id].seq    = read->seq;
+        _pf_topMappings[id].qual   = read->qual;
+
         DEBUG({
             fprintf(stderr, ">%s length:%d\n", read->name, readLen);
         });
@@ -347,16 +380,15 @@ void* mapSeq(void *idp)
                 fprintf(stderr, "\tunmapped\tshortRead\n", read->name, readLen);
             });
 
-            _pf_topMappings[id][0].flag = 4;
-            _pf_topMappings[id][0].qName = read->name;
-            _pf_topMappings[id][0].seq = read->seq;
-            _pf_topMappings[id][0].qual = read->qual;
-            printSamEntry(_pf_topMappings[id][0], outBuffer);
+            _pf_topMappings[id].mappings[0].samList.clear();
+            printSamEntry(_pf_topMappings[id], 1, outBuffer);
             continue;
         }
 
         reverseComplete(read->seq, seq_rev, *read->length);
         reverse(read->qual, qual_rev, qualLen);
+        _pf_topMappings[id].seq_rev  = seq_rev;
+        _pf_topMappings[id].qual_rev = qual_rev;
 
         // extract forward-reverse seeds
         getLocs_extend_whole_step(read->seq, readLen, SAMPLING_COUNT, _pf_seedsForward + id, _pf_seedsReverse + id);
@@ -386,13 +418,10 @@ void* mapSeq(void *idp)
         float scoreRatio = 4;
         if(_pf_topWins[id].list[0].score >= scoreRatio * _pf_topWins[id].list[1].score) // significantly better window => coarse mode
         {
-            _pf_topMappings[id][0].qName = read->name;
-            _pf_topMappings[id][0].flag = 0;
-            _pf_topMappings[id][0].qual = read->qual;
-            
-            alignWin(_pf_topWins[id].list[0], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id][0], id);
-
-            printSamEntry(_pf_topMappings[id][0], outBuffer);
+            _pf_topMappings[id].mappings[0].samList.clear();
+            _pf_topMappings[id].mappings[0].totalScore = 0;
+            alignWin(_pf_topWins[id].list[0], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id].mappings[0], id);
+            printSamEntry(_pf_topMappings[id], 1, outBuffer);
         }
         else // fine mode
         {
@@ -402,29 +431,16 @@ void* mapSeq(void *idp)
 
             for(i=0; i<_pf_topWins[id].num; i++)
             {
-                _pf_topMappings[id][i].qName = read->name;
-                _pf_topMappings[id][i].flag = 0;
-                _pf_topMappings[id][i].qual = read->qual;
-                
-                alignWin(_pf_topWins[id].list[i], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id][i], id);
+                _pf_topMappings[id].mappings[i].samList.clear();
+                _pf_topMappings[id].mappings[i].totalScore = 0;
+                alignWin(_pf_topWins[id].list[i], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id].mappings[i], id);
             }
 
             // sort the windows based on the score!
-            std::sort(_pf_topMappings[id], _pf_topMappings[id] + _pf_topWins[id].num, compareSam);
+            std::sort(_pf_topMappings[id].mappings, _pf_topMappings[id].mappings + _pf_topWins[id].num, compareSam);
 
             // print 
-            for(i=0; i<_pf_topWins[id].num; i++)
-            {
-                if(i == 0)
-                {
-                    printSamEntry(_pf_topMappings[id][i], outBuffer);
-                }
-                else if((_pf_topMappings[id][i].flag & 4) == 0)
-                {
-                    _pf_topMappings[id][i].flag = _pf_topMappings[id][i].flag | 256;
-                    printSamEntry(_pf_topMappings[id][i], outBuffer);
-                }
-            }
+            printSamEntry(_pf_topMappings[id], _pf_topWins[id].num, outBuffer);
         }
     }
 
@@ -838,13 +854,13 @@ bool compareWin(const Win_t& w1, const Win_t& w2)
     return w1.score > w2.score;
 }
 
-bool compareSam(const Sam_t& s1, const Sam_t& s2)
+bool compareSam(const SamList_t& s1, const SamList_t& s2)
 {
-    return s1.alnScore > s2.alnScore;
+    return s1.totalScore > s2.totalScore;
 }
 
 /**********************************************/
-void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qual, char* qual_rev, Sam_t &map, int id)
+void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qual, char* qual_rev, SamList_t &map, int id)
 {
     uint32_t i;
     uint32_t margin = rLen >> 1;
@@ -853,8 +869,8 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 
     if(win.isReverse)
     {
-        map.flag = map.flag | 16;
-        map.seq = query_rev;
+        // map.flag = map.flag | 16;
+        // map.seq = query_rev;
 
         _pf_seedsSelected[id].num = 0;
         for(i = 0; i < _pf_seedsReverse[id].num; i++)
@@ -891,19 +907,19 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         if(_pf_topChains[id].list[0].chainLen > 1)
         {
             // fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
-            alignChain(_pf_topChains[id].list[0], query_rev, rLen, map);
+            alignChain(_pf_topChains[id].list[0], query_rev, rLen, 1, map);
         }
         else
         {
             // strcpy(map.cigar, "*");
-            map.flag = 4;
-            map.seq = query;
-            map.alnScore = -2 * rLen;
+            // map.flag = 4;
+            // map.seq = query;
+            map.totalScore = -2 * rLen;
         }
     }
     else
     {
-        map.seq = query;
+        // map.seq = query;
 
         _pf_seedsSelected[id].num = 0;
         for(i = 0; i < _pf_seedsForward[id].num; i++)
@@ -940,14 +956,14 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         if(_pf_topChains[id].list[0].chainLen > 1)
         {
             // fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
-            alignChain(_pf_topChains[id].list[0], query, rLen, map);
+            alignChain(_pf_topChains[id].list[0], query, rLen, 0, map);
         }
         else
         {
             // strcpy(map.cigar, "*");
-            map.flag = 4;
-            map.seq = query;
-            map.alnScore = -2 * rLen;
+            // map.flag = 4;
+            // map.seq = query;
+            map.totalScore = -2 * rLen;
         }
     }
 
@@ -1037,7 +1053,7 @@ void fixCigar(std::string &cigar, std::string semiCigar)
     cigar = sout.str();
 }
 /**********************************************/
-void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
+void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, int isRev, SamList_t &map)
 {
     int i;
     int j;
@@ -1057,6 +1073,7 @@ void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
     std::ostringstream soutCigar;
     std::string alnCigar;
     int alnScore = 0;
+    Sam_t tmpSam;
     // int alnScore_tmp;
 
     // // print query
@@ -1069,8 +1086,10 @@ void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
     //  fprintf(stderr, "%c", "ACGTN"[refAlnSeq[j]]);
     // fprintf(stderr, "\n");
 
+    // set the flag
+    tmpSam.flag = (isRev ? 16 : 0);
     // set sam pos
-    map.pos = chain.seeds[0].tPos;
+    tmpSam.pos = chain.seeds[0].tPos;
 
     // extend before first seed
     readAlnLen = chain.seeds[0].qPos;
@@ -1102,7 +1121,7 @@ void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
         free(cigar);
 
         // fix sam pos
-        map.pos = chain.seeds[0].tPos - tLen;
+        tmpSam.pos = chain.seeds[0].tPos - tLen;
     }
 
     for(i=0; i<chain.chainLen-1; i++)
@@ -1188,7 +1207,7 @@ void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
     soutCigar << chain.seeds[i].len << "M";
     alnScore += chain.seeds[i].len * _pf_kswMatch;
-    map.posEnd = chain.seeds[i].tPos + chain.seeds[i].len - 1;
+    tmpSam.posEnd = chain.seeds[i].tPos + chain.seeds[i].len - 1;
 
     // extend after last seed
     readAlnStart = chain.seeds[i].qPos + chain.seeds[i].len;
@@ -1218,7 +1237,7 @@ void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
         }
         free(cigar);
 
-        map.posEnd = refAlnStart + tLen - 1;
+        tmpSam.posEnd = refAlnStart + tLen - 1;
     }
 
     // fprintf(stderr, "score: %d\n", alnScore);
@@ -1226,11 +1245,14 @@ void alignChain_ksw(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
     fixCigar(alnCigar, soutCigar.str());
     // fprintf(stderr, "cigar: %s\n", alnCigar.c_str());
     // map.cigar = soutCigar.str();
-    // map.cigar = alnCigar;
+    tmpSam.cigar = alnCigar;
     // map.cigar = (char*) malloc((alnCigar.size() + 1) * sizeof(char));
-    strcpy(map.cigar, alnCigar.c_str());
-    map.alnScore = alnScore;
+    // strcpy(map.cigar, alnCigar.c_str());
+    tmpSam.alnScore = alnScore;
     // return alnScore;
+
+    map.totalScore = alnScore;
+    map.samList.push_back(tmpSam);
 }
 /**********************************************/
 void edlibGetCigar(const unsigned char* const alignment, const int alignmentLength, const EdlibCigarFormat cigarFormat, std::deque<char> *cigar)
@@ -1337,7 +1359,7 @@ void edlibGetCigarReverse(const unsigned char* const alignment, const int alignm
     }
 }
 /**********************************************/
-void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
+void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, SamList_t &map)
 {
     int i;
     int j;
@@ -1364,11 +1386,12 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
     std::string alnCigar;
     int alnScore = 0;
-    EdlibAlignResult edResult;
+    EdlibAlignResult edResult, edResult_rev;
     std::deque<char> *edCigar = new std::deque<char>();
     std::string edCigarStr;
     int tmpNum;
     int numDigits;
+    Sam_t tmpSam;
 
     uint32_t chrBeg, chrEnd;
     bwt_get_chr_boundaries(chain.seeds[0].tPos, chain.seeds[chain.chainLen-1].tPos, &chrBeg, &chrEnd);
@@ -1386,8 +1409,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
     //  fprintf(stderr, "%c", "ACGTN"[refAlnSeq[j]]);
     // fprintf(stderr, "\n");
 
+    // set the flag
+    tmpSam.flag = (isRev ? 16 : 0);
     // set sam pos
-    map.pos = chain.seeds[0].tPos;
+    tmpSam.pos = chain.seeds[0].tPos;
 
     // extend before first seed
     readAlnLen = chain.seeds[0].qPos;
@@ -1438,7 +1463,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
                     // update score
                     alnScore -= edResult.editDistance;
                     // fix sam pos
-                    map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                    tmpSam.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
 
                     // Write code of move to cigar string.
                     edCigar->push_front('I');
@@ -1456,7 +1481,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
                     alnScore -= edResult.editDistance;
                     edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                     // fix sam pos
-                    map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                    tmpSam.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
                 }
             }
             else
@@ -1464,7 +1489,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
                 alnScore -= edResult.editDistance;
                 edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                 // fix sam pos
-                map.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                tmpSam.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
             }
 
             edlibFreeAlignResult(edResult);
@@ -1535,75 +1560,95 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
 
             edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
             alnScore -= edResult.editDistance;
-
             edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
-            // fprintf(stderr, "\tmid\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\t%s\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100, 
-            //  readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 60 ? "################" : "");
             edlibFreeAlignResult(edResult);
-            //
-            // if(readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 30)
+
+            // if(readAlnLen >= _pf_splitLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_splitSim)
             // {
-            //  fprintf(stderr, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            // //  uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
+            // //  uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
+            // //  uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+            // //  uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+            // //  int tLen_ksw, qLen_ksw;
+            // //  int tmp_cigarNum;
+            // //  uint32_t *tmp_cigar;
+            // //  int tmp_bandWidth;
+            // //  int tmp_alnScore = 0;
+            //     uint32_t readAlnStart_new, refAlnStart_new;
+            //     uint32_t readAlnEnd_new, refAlnEnd_new;
+            //     int32_t readAlnLen_new, refAlnLen_new;
+
+            //     // find the starting coordinate of the potential split
+            //     convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
+            //     bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
+            //     ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+            //     readAlnStart_new = readAlnStart + qLen_ksw;
+            //     refAlnStart_new = refAlnStart + tLen_ksw;
+
+            //     // find the ending coordinate of the potential split
+            //     convertChar2int(readAlnSeq_ksw_rev, query+readAlnStart, readAlnLen);
+            //     reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
+            //     bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
+            //     reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
+            //     ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+            //     readAlnEnd_new = readAlnEnd - qLen_ksw;
+            //     refAlnEnd_new = refAlnEnd - tLen_ksw;
+
+            //     refAlnLen_new = refAlnEnd_new - refAlnStart_new;
+            //     readAlnLen_new = readAlnEnd_new - readAlnStart_new;
+
+            //     // split alignment if extensions do not cross each other
+            //     if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
+            //     {
+            //         // make the first part of the split alignment
+            //         // make the second part of the split alignment
+            //         // check if the reverse complement of the middle part aligns well
+            //         edlibFreeAlignResult(edResult); // free old results
+            //         bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
+            //         edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+            //         reverseComplete(refAlnSeq, tmpAlnSeq, refAlnLen_new);
+            //         edResult_rev = edlibAlign(query+readAlnStart_new, readAlnLen_new, tmpAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+            //         fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
+            //         edlibFreeAlignResult(edResult);
+            //         edlibFreeAlignResult(edResult_rev);
+            //     }
+            //     else
+            //     {
+            //         alnScore -= edResult.editDistance;
+            //         edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+            //         edlibFreeAlignResult(edResult);
+            //     }
+                
+            // //  tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
+            // //  tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
+            // //  free(tmp_cigar);
+
+            // //  /////////////////////////////////////////////////////////
+
+            // //  tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
+            // //  tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
+            // //  free(tmp_cigar);
+
+            // //  fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart, readAlnEnd, refAlnStart, refAlnEnd);
+            // //  fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart_new, readAlnEnd_new, refAlnStart_new, refAlnEnd_new);
+
+            // //  /////////////////////////////////////////////////////////
+
+            // //  if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
+            // //  {
+            // //      bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
+            // //      reverseComplete(refAlnSeq, tmpAlnSeq, refAlnLen_new);
+            // //      edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, tmpAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+            // //      fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
+            // //      edlibFreeAlignResult(edResult); 
+            // //  }
+
             // }
-            // if(readAlnLen >= 100 && (1 - ((float)edResult.editDistance / readAlnLen)) * 100 < 60)
+            // else
             // {
-            //  uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
-            //  uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
-            //  uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
-            //  uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
-            //  int tLen_ksw, qLen_ksw;
-            //  int tmp_cigarNum;
-            //  uint32_t *tmp_cigar;
-            //  int tmp_bandWidth;
-            //  int tmp_alnScore = 0;
-            //  uint32_t readAlnStart_new, refAlnStart_new;
-            //  uint32_t readAlnEnd_new, refAlnEnd_new;
-            //  int32_t readAlnLen_new, refAlnLen_new;
-
-            //  /////////////////////////////////////////////////////////
-
-            //  convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
-            //  bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
-
-            //  ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
-            //  tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
-            //  tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
-            //  free(tmp_cigar);
-
-            //  readAlnStart_new = readAlnStart + qLen_ksw;
-            //  refAlnStart_new = refAlnStart + tLen_ksw;
-
-            //  /////////////////////////////////////////////////////////
-
-            //  convertChar2int(readAlnSeq_ksw_rev, query+readAlnStart, readAlnLen);
-            //  reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
-
-            //  bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
-            //  reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
-
-            //  ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
-            //  tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
-            //  tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
-            //  free(tmp_cigar);
-
-            //  readAlnEnd_new = readAlnEnd - qLen_ksw;
-            //  refAlnEnd_new = refAlnEnd - tLen_ksw;
-            //  refAlnLen_new = refAlnEnd_new - refAlnStart_new;
-            //  readAlnLen_new = readAlnEnd_new - readAlnStart_new;
-            //  fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart, readAlnEnd, refAlnStart, refAlnEnd);
-            //  fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart_new, readAlnEnd_new, refAlnStart_new, refAlnEnd_new);
-
-            //  /////////////////////////////////////////////////////////
-
-            //  if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
-            //  {
-            //      bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
-            //      reverseComplete(refAlnSeq, tmpAlnSeq, refAlnLen_new);
-            //      edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, tmpAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-            //      fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
-            //      edlibFreeAlignResult(edResult); 
-            //  }
-
+            //     alnScore -= edResult.editDistance;
+            //     edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+            //     edlibFreeAlignResult(edResult);
             // }
         }
         else // no need to do smith-waterman, either insertion or deletion!
@@ -1667,7 +1712,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
     // edCigar->push_back('=');
 
     // set sam posEnd
-    map.posEnd = chain.seeds[i].tPos + chain.seeds[i].len - 1;
+    tmpSam.posEnd = chain.seeds[i].tPos + chain.seeds[i].len - 1;
 
     // extend after last seed
     readAlnStart = chain.seeds[i].qPos + chain.seeds[i].len;
@@ -1712,7 +1757,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
                     // update score
                     alnScore -= edResult.editDistance;
                     // fix sam pos
-                    map.posEnd = refAlnStart + edResult.endLocations[0];
+                    tmpSam.posEnd = refAlnStart + edResult.endLocations[0];
 
                     // Write number of moves to cigar string.
                     tmpNum = (readAlnLen - qLen_ksw);
@@ -1733,7 +1778,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
                     alnScore -= edResult.editDistance;
                     edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                     // fix sam posEnd
-                    map.posEnd = refAlnStart + edResult.endLocations[0];
+                    tmpSam.posEnd = refAlnStart + edResult.endLocations[0];
                 }
             }
             else
@@ -1741,7 +1786,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
                 alnScore -= edResult.editDistance;
                 edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                 // fix sam posEnd
-                map.posEnd = refAlnStart + edResult.endLocations[0];
+                tmpSam.posEnd = refAlnStart + edResult.endLocations[0];
             }
 
             edlibFreeAlignResult(edResult);
@@ -1770,10 +1815,13 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, Sam_t &map)
     delete edCigar;
 
     fixCigar(alnCigar, edCigarStr);
-    // map.cigar = alnCigar;
+    tmpSam.cigar = alnCigar;
     // map.cigar = (char*) malloc((alnCigar.size() + 1) * sizeof(char));
-    strcpy(map.cigar, alnCigar.c_str());
-    map.alnScore = alnScore;
+    // strcpy(map.cigar, alnCigar.c_str());
+    tmpSam.alnScore = alnScore;
+
+    map.totalScore = alnScore;
+    map.samList.push_back(tmpSam);
 
     // fprintf(stderr, "%s\n", alnCigar.c_str());
     // exit(0);

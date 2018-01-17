@@ -6,6 +6,7 @@
 #define __PACFAST_BWT__
 
 #include <string>
+#include <vector>
 #include "Reads.h"
 
 typedef struct
@@ -59,23 +60,43 @@ typedef struct
 
 // bool compareChain(const Chain_t& c1, const Chain_t& c2);
 
-typedef struct  
+class Sam_t
 {
-    char *qName;
+public:
+    // char *qName;
     uint16_t flag;
     // char *rName;
     uint32_t pos;
     uint32_t posEnd;
     // uint8_t mapQ;
-    // std::string cigar;
-    char *cigar;
-    int32_t tLen;
-    char *seq;
-    char *qual;
+    std::string cigar;
+    // char *cigar;
+    // int32_t tLen;
+    // char *seq;
+    // char *qual;
     int32_t alnScore;
-} Sam_t;
+};
 
-bool compareSam(const Sam_t& s1, const Sam_t& s2);
+class SamList_t
+{
+public:
+    std::vector<Sam_t> samList; // a vector of sam elements; useful for split mappings
+    int32_t totalScore; // sum of the score of all splits
+};
+
+class MapInfo
+{
+public:
+    char *qName;
+    char *seq;
+    char *seq_rev;
+    char *qual;
+    char *qual_rev;
+    // int mapNum;
+    SamList_t *mappings;
+};
+
+bool compareSam(const SamList_t& s1, const SamList_t& s2);
 
 void initializeFAST();
 void finalizeFAST();
