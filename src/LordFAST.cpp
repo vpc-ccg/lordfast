@@ -71,6 +71,7 @@ int                 _pf_clipLen = 500;
 double              _pf_clipSim = 0.75;
 int                 _pf_splitLen = 500;
 double              _pf_splitSim = 0.40;
+double              _pf_reverseSim = 0.60;
 
 FILE                *_pf_outFile = NULL;
 
@@ -1365,6 +1366,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     int j;
     // for edlib
     char readAlnSeq[SEQ_MAX_LENGTH];
+    char readAlnSeq_rev[SEQ_MAX_LENGTH];
     char refAlnSeq[SEQ_MAX_LENGTH];
     char refAlnSeq_rev[SEQ_MAX_LENGTH];
     uint32_t readAlnStart, refAlnStart;
@@ -1630,14 +1632,55 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     edCigar->clear();
                     alnScore = 0;
 
-                    // ////////////////////// check the middle part of the split (if the reverse complement of the middle part aligns well)
-                    // bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
-                    // edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-                    // reverseComplete(refAlnSeq, refAlnSeq_rev, refAlnLen_new);
-                    // edResult_rev = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq_rev, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-                    // fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
-                    // edlibFreeAlignResult(edResult);
-                    // edlibFreeAlignResult(edResult_rev);
+                    ////////////////////// check the middle part of the split (if the reverse complement of the middle part aligns well)
+                    bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
+                    edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    reverseComplete(query+readAlnStart_new, readAlnSeq_rev, readAlnLen_new);
+                    edResult_rev = edlibAlign(readAlnSeq_rev, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    if((1 - ((double)edResult_rev.editDistance / readAlnLen_new)) > (1 - ((double)edResult.editDistance / readAlnLen_new))
+                        && (1 - ((double)edResult_rev.editDistance / readAlnLen_new)) > _pf_reverseSim)
+                    {
+                        tmpSam.flag = (isRev ? 0 : 16); // Note that is opposite of the real direction
+                        tmpSam.pos = refAlnStart_new;
+                        tmpSam.posEnd = refAlnEnd_new;
+                        tmpSam.alnScore = -1 * edResult_rev.editDistance;
+                        // Write number of moves to cigar string.
+                        tmpNum = readAlnStart_new;
+                        numDigits = 0;
+                        for (; tmpNum; tmpNum /= 10)
+                        {
+                            edCigar->push_back('0' + tmpNum % 10);
+                            numDigits++;
+                        }
+                        reverse(edCigar->end() - numDigits, edCigar->end());
+                        // Write code of move to cigar string.
+                        edCigar->push_back('I');
+                        //
+                        edlibGetCigar(edResult_rev.alignment, edResult_rev.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                        // Write number of moves to cigar string.
+                        tmpNum = (readLen - readAlnEnd_new);
+                        numDigits = 0;
+                        for (; tmpNum; tmpNum /= 10)
+                        {
+                            edCigar->push_back('0' + tmpNum % 10);
+                            numDigits++;
+                        }
+                        reverse(edCigar->end() - numDigits, edCigar->end());
+                        // Write code of move to cigar string.
+                        edCigar->push_back('I');
+                        edCigar->push_back(0);  // Null character termination.
+                        edCigarStr.assign(edCigar->begin(), edCigar->end());
+                        fixCigar(alnCigar, edCigarStr);
+                        tmpSam.cigar = alnCigar;
+                        // push the split
+                        map.samList.push_back(tmpSam);
+                        map.totalScore = -1 * edResult_rev.editDistance;
+                        // reset
+                        edCigar->clear();
+                        alnScore = 0;
+                    }
+                    edlibFreeAlignResult(edResult);
+                    edlibFreeAlignResult(edResult_rev);
                     
                     ////////////////////// make the second part of the split alignment
                     if(readAlnEnd_new < readAlnEnd)
