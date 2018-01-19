@@ -310,7 +310,7 @@ void printSamEntry(MapInfo &map, int num, std::ostringstream& sout)
                 {
                     bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
                     //
-                    sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
+                    sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" << chrName << "\t" << chrBeg + 1 
                         << "\t50\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
                 }
@@ -1366,7 +1366,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     // for edlib
     char readAlnSeq[SEQ_MAX_LENGTH];
     char refAlnSeq[SEQ_MAX_LENGTH];
-    char tmpAlnSeq[SEQ_MAX_LENGTH];
+    char refAlnSeq_rev[SEQ_MAX_LENGTH];
     uint32_t readAlnStart, refAlnStart;
     uint32_t readAlnEnd, refAlnEnd;
     int32_t readAlnLen, refAlnLen;
@@ -1391,7 +1391,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     std::string edCigarStr;
     int tmpNum;
     int numDigits;
-    Sam_t tmpSam;
+    Sam_t tmpSam, tmpSam2;
 
     uint32_t chrBeg, chrEnd;
     bwt_get_chr_boundaries(chain.seeds[0].tPos, chain.seeds[chain.chainLen-1].tPos, &chrBeg, &chrEnd);
@@ -1424,10 +1424,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             reverseComplete(query, readAlnSeq, readAlnLen);
 
             refAlnStart = chain.seeds[0].tPos - refAlnLen;
-            bwt_str_pac2char(refAlnStart, refAlnLen, tmpAlnSeq);
-            reverseComplete(tmpAlnSeq, refAlnSeq, refAlnLen);
+            bwt_str_pac2char(refAlnStart, refAlnLen, refAlnSeq);
+            reverseComplete(refAlnSeq, refAlnSeq_rev, refAlnLen);
 
-            edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
+            edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq_rev, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 
             // fprintf(stderr, "\tbeg\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
 
@@ -1458,7 +1458,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 if(qLen_ksw > 0 && qLen_ksw < readAlnLen) // perform a new edlib alignment with new coordinates
                 {
                     edlibFreeAlignResult(edResult); // free old results
-                    edResult = edlibAlign(readAlnSeq, qLen_ksw, refAlnSeq, tLen_ksw, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    edResult = edlibAlign(readAlnSeq, qLen_ksw, refAlnSeq_rev, tLen_ksw, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
                     edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                     // update score
                     alnScore -= edResult.editDistance;
@@ -1559,97 +1559,120 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             // fprintf(stderr, "\n");
 
             edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-            alnScore -= edResult.editDistance;
-            edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
-            edlibFreeAlignResult(edResult);
 
-            // if(readAlnLen >= _pf_splitLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_splitSim)
-            // {
-            // //  uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
-            // //  uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
-            // //  uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
-            // //  uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
-            // //  int tLen_ksw, qLen_ksw;
-            // //  int tmp_cigarNum;
-            // //  uint32_t *tmp_cigar;
-            // //  int tmp_bandWidth;
-            // //  int tmp_alnScore = 0;
-            //     uint32_t readAlnStart_new, refAlnStart_new;
-            //     uint32_t readAlnEnd_new, refAlnEnd_new;
-            //     int32_t readAlnLen_new, refAlnLen_new;
+            if(readAlnLen >= _pf_splitLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_splitSim)
+            {
+            //  uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
+            //  uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
+            //  uint8_t readAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+            //  uint8_t refAlnSeq_ksw_rev[SEQ_MAX_LENGTH];
+            //  int tLen_ksw, qLen_ksw;
+            //  int tmp_cigarNum;
+            //  uint32_t *tmp_cigar;
+            //  int tmp_bandWidth;
+            //  int tmp_alnScore = 0;
+                uint32_t readAlnStart_new, refAlnStart_new;
+                uint32_t readAlnEnd_new, refAlnEnd_new;
+                int32_t readAlnLen_new, refAlnLen_new;
 
-            //     // find the starting coordinate of the potential split
-            //     convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
-            //     bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
-            //     ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
-            //     readAlnStart_new = readAlnStart + qLen_ksw;
-            //     refAlnStart_new = refAlnStart + tLen_ksw;
+                // find the starting coordinate of the potential split
+                convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
+                bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
+                ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+                readAlnStart_new = readAlnStart + qLen_ksw;
+                refAlnStart_new = refAlnStart + tLen_ksw;
 
-            //     // find the ending coordinate of the potential split
-            //     convertChar2int(readAlnSeq_ksw_rev, query+readAlnStart, readAlnLen);
-            //     reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
-            //     bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
-            //     reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
-            //     ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
-            //     readAlnEnd_new = readAlnEnd - qLen_ksw;
-            //     refAlnEnd_new = refAlnEnd - tLen_ksw;
+                // find the ending coordinate of the potential split
+                convertChar2int(readAlnSeq_ksw_rev, query+readAlnStart, readAlnLen);
+                reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
+                bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
+                reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
+                ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+                readAlnEnd_new = readAlnEnd - qLen_ksw;
+                refAlnEnd_new = refAlnEnd - tLen_ksw;
 
-            //     refAlnLen_new = refAlnEnd_new - refAlnStart_new;
-            //     readAlnLen_new = readAlnEnd_new - readAlnStart_new;
+                refAlnLen_new = refAlnEnd_new - refAlnStart_new;
+                readAlnLen_new = readAlnEnd_new - readAlnStart_new;
 
-            //     // split alignment if extensions do not cross each other
-            //     if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
-            //     {
-            //         // make the first part of the split alignment
-            //         // make the second part of the split alignment
-            //         // check if the reverse complement of the middle part aligns well
-            //         edlibFreeAlignResult(edResult); // free old results
-            //         bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
-            //         edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-            //         reverseComplete(refAlnSeq, tmpAlnSeq, refAlnLen_new);
-            //         edResult_rev = edlibAlign(query+readAlnStart_new, readAlnLen_new, tmpAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-            //         fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
-            //         edlibFreeAlignResult(edResult);
-            //         edlibFreeAlignResult(edResult_rev);
-            //     }
-            //     else
-            //     {
-            //         alnScore -= edResult.editDistance;
-            //         edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
-            //         edlibFreeAlignResult(edResult);
-            //     }
-                
-            // //  tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
-            // //  tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
-            // //  free(tmp_cigar);
+                // split alignment if extensions do not cross each other
+                if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
+                {
+                    edlibFreeAlignResult(edResult);
+                    ////////////////////// make the first part of the split alignment
+                    if(readAlnStart_new > readAlnStart)
+                    {
+                        edResult = edlibAlign(query+readAlnStart, (readAlnStart_new - readAlnStart), refAlnSeq, (refAlnStart_new - refAlnStart), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                        edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                        alnScore -= edResult.editDistance;
+                        edlibFreeAlignResult(edResult);
+                    }
+                    // Write number of moves to cigar string.
+                    tmpNum = (readLen - readAlnStart_new);
+                    numDigits = 0;
+                    for (; tmpNum; tmpNum /= 10)
+                    {
+                        edCigar->push_back('0' + tmpNum % 10);
+                        numDigits++;
+                    }
+                    reverse(edCigar->end() - numDigits, edCigar->end());
+                    // Write code of move to cigar string.
+                    edCigar->push_back('I');
+                    edCigar->push_back(0);  // Null character termination.
+                    edCigarStr.assign(edCigar->begin(), edCigar->end());
+                    fixCigar(alnCigar, edCigarStr);
+                    tmpSam.cigar = alnCigar;
+                    tmpSam.alnScore = alnScore;
+                    tmpSam.posEnd = refAlnStart_new;
+                    // push the split
+                    map.samList.push_back(tmpSam);
+                    map.totalScore += alnScore;
+                    // reset
+                    edCigar->clear();
+                    alnScore = 0;
 
-            // //  /////////////////////////////////////////////////////////
-
-            // //  tmp_bandWidth = (qLen_ksw > tLen_ksw ? qLen_ksw : tLen_ksw);
-            // //  tmp_alnScore = ksw_global(qLen_ksw, readAlnSeq_ksw, tLen_ksw, refAlnSeq_ksw, 5, _pf_kswMatrix, _pf_kswGapOpen, _pf_kswGapExtend, tmp_bandWidth, &tmp_cigarNum, &tmp_cigar);
-            // //  free(tmp_cigar);
-
-            // //  fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart, readAlnEnd, refAlnStart, refAlnEnd);
-            // //  fprintf(stderr, "rs:%u re:%u ts:%u te:%u\n", readAlnStart_new, readAlnEnd_new, refAlnStart_new, refAlnEnd_new);
-
-            // //  /////////////////////////////////////////////////////////
-
-            // //  if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
-            // //  {
-            // //      bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
-            // //      reverseComplete(refAlnSeq, tmpAlnSeq, refAlnLen_new);
-            // //      edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, tmpAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-            // //      fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
-            // //      edlibFreeAlignResult(edResult); 
-            // //  }
-
-            // }
-            // else
-            // {
-            //     alnScore -= edResult.editDistance;
-            //     edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
-            //     edlibFreeAlignResult(edResult);
-            // }
+                    // ////////////////////// check the middle part of the split (if the reverse complement of the middle part aligns well)
+                    // bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
+                    // edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    // reverseComplete(refAlnSeq, refAlnSeq_rev, refAlnLen_new);
+                    // edResult_rev = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq_rev, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    // fprintf(stderr, "\t################################################\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen_new, (1 - ((float)edResult.editDistance / readAlnLen_new)) * 100);
+                    // edlibFreeAlignResult(edResult);
+                    // edlibFreeAlignResult(edResult_rev);
+                    
+                    ////////////////////// make the second part of the split alignment
+                    if(readAlnEnd_new < readAlnEnd)
+                    {
+                        reverseComplete(query+readAlnStart, readAlnSeq, readAlnLen);
+                        reverseComplete(refAlnSeq, refAlnSeq_rev, refAlnLen);
+                        edResult = edlibAlign(readAlnSeq, (readAlnEnd - readAlnEnd_new), refAlnSeq_rev, (refAlnEnd - refAlnEnd_new), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                        edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                        alnScore -= edResult.editDistance;
+                        edlibFreeAlignResult(edResult);
+                    }
+                    // Write code of move to cigar string.
+                    edCigar->push_front('I');
+                    // Write number of moves to cigar string.
+                    tmpNum = readAlnEnd_new;
+                    for (; tmpNum; tmpNum /= 10)
+                    {
+                        edCigar->push_front('0' + tmpNum % 10);
+                    }
+                    tmpSam.flag = (isRev ? 16 : 0);
+                    tmpSam.pos = refAlnEnd_new;
+                }
+                else
+                {
+                    alnScore -= edResult.editDistance;
+                    edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                    edlibFreeAlignResult(edResult);
+                }
+            }
+            else
+            {
+                alnScore -= edResult.editDistance;
+                edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                edlibFreeAlignResult(edResult);
+            }
         }
         else // no need to do smith-waterman, either insertion or deletion!
         {
@@ -1812,7 +1835,6 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
     edCigar->push_back(0);  // Null character termination.
     edCigarStr.assign(edCigar->begin(), edCigar->end());
-    delete edCigar;
 
     fixCigar(alnCigar, edCigarStr);
     tmpSam.cigar = alnCigar;
@@ -1820,8 +1842,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     // strcpy(map.cigar, alnCigar.c_str());
     tmpSam.alnScore = alnScore;
 
-    map.totalScore = alnScore;
     map.samList.push_back(tmpSam);
+    map.totalScore += alnScore;
+
+    delete edCigar;
 
     // fprintf(stderr, "%s\n", alnCigar.c_str());
     // exit(0);
