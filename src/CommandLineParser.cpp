@@ -124,7 +124,7 @@ int parseCommandLine (int argc, char *argv[])
         {"seq",                     required_argument,  0,                  's'},
         {"out",                     required_argument,  0,                  'o'},
         {"unMapped",                required_argument,  0,                  'u'},
-        {"thread",                  required_argument,  0,                  't'},
+        {"threads",                 required_argument,  0,                  't'},
         {"minAnchorLen",            required_argument,  0,                  'k'},
         {"minReadLen",              required_argument,  0,                  'l'},
         {"seedCount",               required_argument,  0,                  'c'},
