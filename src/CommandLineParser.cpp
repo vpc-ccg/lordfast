@@ -75,7 +75,8 @@ unsigned int            CONTIG_MAX_SIZE;
 unsigned int            THREAD_COUNT = 1;
 double                  MAX_MEMORY = 4;// GB
 int                     THREAD_ID[255];
-chainAlg_t              chainAlg = CHAIN_ALG_CLASP;
+// chainAlg_t              chainAlg = CHAIN_ALG_CLASP;
+chainAlg_t              chainAlg = CHAIN_ALG_DPN2;
 
 #if (defined(__MACH__) && defined(__APPLE__))
 #include <mach-o/getsect.h>
@@ -203,18 +204,19 @@ int parseCommandLine (int argc, char *argv[])
                 {
                     chainAlg = CHAIN_ALG_DPN2;
                 }
-                else if(optarg_str == "lis-n2")
-                {
-                    chainAlg = CHAIN_ALG_LISN2;
-                }
-                else if(optarg_str == "lis-nlogn")
-                {
-                    chainAlg = CHAIN_ALG_LISNLOGN;
-                }
+                // else if(optarg_str == "lis-n2")
+                // {
+                //     chainAlg = CHAIN_ALG_LISN2;
+                // }
+                // else if(optarg_str == "lis-nlogn")
+                // {
+                //     chainAlg = CHAIN_ALG_LISNLOGN;
+                // }
                 else
                 {
                     fprintf(stderr, "Unknown argument for chainAlg. Using clasp algorithm!\n");
-                    chainAlg = CHAIN_ALG_CLASP;
+                    // chainAlg = CHAIN_ALG_CLASP;
+                    chainAlg = CHAIN_ALG_DPN2;
                 }
                 break;
             case 'h':
