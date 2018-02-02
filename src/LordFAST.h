@@ -101,7 +101,7 @@ bool compareSam(const SamList_t& s1, const SamList_t& s2);
 void initializeFAST();
 void finalizeFAST();
 void initFASTChunk(Read *seqList, int seqListSize);
-void finalizeFASTChunk();
+// void finalizeFASTChunk();
 void mapSeqMT();
 
 #endif /*__PACFAST_BWT__*/

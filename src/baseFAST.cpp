@@ -82,9 +82,8 @@ int main(int argc, char *argv[])
         if(bwt_load(fileName[0]))
             return EXIT_FAILURE;
 
-        // if (!initRead(seqFile, 1500000000))
-        // if (!initRead(seqFile, 10000000))
-        if (!initRead(seqFile, 500000000))
+        // if (!initRead(seqFile, 500000000))
+        if (!initRead(seqFile, 100000000))
             return EXIT_FAILURE;
 
         totalLoadingTime += getTime()-startTime;
@@ -114,7 +113,7 @@ int main(int argc, char *argv[])
             mappingTime += getTime() - lstartTime;
             totalMappingTime += mappingTime;
 
-            finalizeFASTChunk();
+            // finalizeFASTChunk();
 
             // fprintf(stdout, "| %15s | %15.2f | %15.2f | %15.2f | %15lld %15lld |\n",
             //     chrName, loadingTime, mappingTime, maxMem, mappingCnt , mappingCnt);

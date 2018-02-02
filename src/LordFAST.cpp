@@ -259,17 +259,17 @@ void initFASTChunk(Read *seqList, int seqListSize)
     // }
 }
 /**********************************************/
-void finalizeFASTChunk()
-{
-    int i;
+// void finalizeFASTChunk()
+// {
+//     int i;
 
-    // for(i=0; i<_pf_seqListSize; i++)
-    // {
-    //  freeMem(_pf_chainList[i], _pf_maxWin * sizeof(Chain_t));
-    // }
-    // freeMem(_pf_chainList, _pf_seqListSize * sizeof(Chain_t*));
-    // freeMem(_pf_chainListSize, _pf_seqListSize * sizeof(uint8_t));
-}
+//     // for(i=0; i<_pf_seqListSize; i++)
+//     // {
+//     //  freeMem(_pf_chainList[i], _pf_maxWin * sizeof(Chain_t));
+//     // }
+//     // freeMem(_pf_chainList, _pf_seqListSize * sizeof(Chain_t*));
+//     // freeMem(_pf_chainListSize, _pf_seqListSize * sizeof(uint8_t));
+// }
 /**********************************************/
 int pf_getNextRead()
 {
