@@ -294,12 +294,25 @@ void mapSeqMT()
     return;
 }
 /*********************************************/
-void printSamEntry(MapInfo &map, int num, std::ostringstream& sout)
+void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
 {
     int i, j;
     uint32_t chrBeg, chrEnd;
     char *chrName;
     int32_t chrLen;
+
+    double mapqFrac = 60.0 / (_pf_maxWin - 1);
+    int x = 0;
+    for(i = 0; i < num; i++)
+    {
+        if(map.mappings[i].samList.size() > 0) // mapped
+        {
+            x++;
+        }
+    }
+    double mapq = (_pf_maxWin - x) * mapqFrac;
+    int32_t mapq_int;
+
 
     for(i = 0; i < num; i++)
     {
@@ -311,8 +324,11 @@ void printSamEntry(MapInfo &map, int num, std::ostringstream& sout)
                 {
                     bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
                     //
+                    mapq_int = mapq + 9 * (0.2 - (double)(-1*map.mappings[i].samList[j].alnScore)/readLen) / 0.2 + 4;
+                    mapq_int = (mapq_int > 60 ? 60 : mapq_int);
+                    mapq_int = (mapq_int < 0 ? 0 : mapq_int);
                     sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" << chrName << "\t" << chrBeg + 1 
-                        << "\t50\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+                        << "\t" << mapq_int << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
                 }
             }
@@ -329,8 +345,11 @@ void printSamEntry(MapInfo &map, int num, std::ostringstream& sout)
                 map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
                 bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
                 //
+                mapq_int = mapq + 9 * (0.2 - (double)(-1*map.mappings[i].samList[j].alnScore)/readLen) / 0.2 + 4;
+                mapq_int = (mapq_int > 60 ? 60 : mapq_int);
+                mapq_int = (mapq_int < 0 ? 0 : mapq_int);
                 sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
-                    << "\t50\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+                    << "\t" << mapq_int << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                     << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
             }
         }
@@ -382,7 +401,7 @@ void* mapSeq(void *idp)
             });
 
             _pf_topMappings[id].mappings[0].samList.clear();
-            printSamEntry(_pf_topMappings[id], 1, outBuffer);
+            printSamEntry(_pf_topMappings[id], readLen, 1, outBuffer);
             continue;
         }
 
@@ -422,7 +441,7 @@ void* mapSeq(void *idp)
             _pf_topMappings[id].mappings[0].samList.clear();
             _pf_topMappings[id].mappings[0].totalScore = 0;
             alignWin(_pf_topWins[id].list[0], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id].mappings[0], id);
-            printSamEntry(_pf_topMappings[id], 1, outBuffer);
+            printSamEntry(_pf_topMappings[id], readLen, 1, outBuffer);
         }
         else // fine mode
         {
@@ -441,7 +460,7 @@ void* mapSeq(void *idp)
             std::sort(_pf_topMappings[id].mappings, _pf_topMappings[id].mappings + _pf_topWins[id].num, compareSam);
 
             // print 
-            printSamEntry(_pf_topMappings[id], _pf_topWins[id].num, outBuffer);
+            printSamEntry(_pf_topMappings[id], readLen, _pf_topWins[id].num, outBuffer);
         }
     }
 
