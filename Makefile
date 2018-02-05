@@ -1,4 +1,4 @@
-PROG_VERSION := "0.0.1"
+PROG_VERSION := "0.0.5"
 
 all: OPTIMIZE_FLAGS build
 log: OPTIMIZE_FLAGS LOG_FLAG build
