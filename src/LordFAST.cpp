@@ -301,16 +301,20 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
     char *chrName;
     int32_t chrLen;
 
+    double bestEdit = (num > 0 ? (double)(-1*map.mappings[0].totalScore)/readLen : 1); // edit distance percentage of the best alingment
     double mapqPortion = 50.0 / (_pf_maxWin - 1);
     int x1 = 0; // number of mappings 
+    int x2 = 0; // number of mappings with edit distance percentage close to that of the best mapping
     for(i = 0; i < num; i++)
     {
         if(map.mappings[i].samList.size() > 0) // mapped
         {
             x1++;
+            if((double)(-1*map.mappings[i].totalScore)/readLen * 0.95 < bestEdit)
+                x2++;
         }
     }
-    double mapq = (_pf_maxWin - x1) * mapqPortion;
+    double mapq = (x2 > 1 ? 0.1 : (_pf_maxWin - x1) * mapqPortion); // mapq 0 if there are multiple good alignments
     int32_t mapq_int = mapq;
     double lowEditBonus, betterQualBonus;
 
@@ -324,7 +328,7 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                 {
                     mapq_int = 60;
                 }
-                else
+                else if(x2 == 1)
                 {
                     // lowEditBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.15 ? 1.05 : 1);
                     // betterQualBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.80 * (double)(-1*map.mappings[i+1].totalScore)/readLen ? 1.09 : 1);
