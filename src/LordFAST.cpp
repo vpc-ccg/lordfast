@@ -314,8 +314,8 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                 x2++;
         }
     }
-    double mapq = (x2 > 1 ? 0.1 : (_pf_maxWin - x1) * mapqPortion); // mapq 0 if there are multiple good alignments
-    int32_t mapq_int = mapq;
+    double mapq = (x2 > 1 ? 2.1 : (_pf_maxWin - x1) * mapqPortion); // mapq 0 if there are multiple good alignments
+    int32_t mapq_int;
     double lowEditBonus, betterQualBonus;
 
     for(i = 0; i < num; i++)
@@ -328,7 +328,7 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                 {
                     mapq_int = 60;
                 }
-                else if(x2 == 1)
+                else // if(x2 == 1)
                 {
                     // lowEditBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.15 ? 1.05 : 1);
                     // betterQualBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.80 * (double)(-1*map.mappings[i+1].totalScore)/readLen ? 1.09 : 1);
@@ -364,6 +364,7 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                 // lowEditBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.15 ? 1.05 : 1);
                 // betterQualBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.95 * (double)(-1*map.mappings[i+1].totalScore)/readLen ? 1.09 : 1);
                 // mapq_int = mapq * lowEditBonus * betterQualBonus;
+                mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
                 //
                 for(j = 0; j < map.mappings[i].samList.size(); j++)
                 {
