@@ -328,23 +328,15 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                 {
                     mapq_int = 60;
                 }
-                else // if(x2 == 1)
+                else 
                 {
-                    // lowEditBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.15 ? 1.05 : 1);
-                    // betterQualBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.80 * (double)(-1*map.mappings[i+1].totalScore)/readLen ? 1.09 : 1);
-                    // mapq_int = mapq * lowEditBonus * betterQualBonus;
                     mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
                 }
-                // else
-                //     mapq_int = 0;
 
                 for(j = 0; j < map.mappings[i].samList.size(); j++)
                 {
                     bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
                     //
-                    // mapq_int = mapq + 9 * (0.2 - (double)(-1*map.mappings[i].samList[j].alnScore)/readLen) / 0.2 + 4;
-                    // mapq_int = (mapq_int > 60 ? 60 : mapq_int);
-                    // mapq_int = (mapq_int < 0 ? 0 : mapq_int);
                     sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" << chrName << "\t" << chrBeg + 1 
                         << "\t" << mapq_int << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
@@ -361,9 +353,6 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
             if(map.mappings[i].samList.size() > 0) // mapped
             {
                 //
-                // lowEditBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.15 ? 1.05 : 1);
-                // betterQualBonus = (num > 1 && (double)(-1*map.mappings[i].totalScore)/readLen < 0.95 * (double)(-1*map.mappings[i+1].totalScore)/readLen ? 1.09 : 1);
-                // mapq_int = mapq * lowEditBonus * betterQualBonus;
                 mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
                 //
                 for(j = 0; j < map.mappings[i].samList.size(); j++)
@@ -371,9 +360,6 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
                     bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
                     //
-                    // mapq_int = mapq + 9 * (0.2 - (double)(-1*map.mappings[i].samList[j].alnScore)/readLen) / 0.2 + 4;
-                    // mapq_int = (mapq_int > 60 ? 60 : mapq_int);
-                    // mapq_int = (mapq_int < 0 ? 0 : mapq_int);
                     sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
                         << "\t" << mapq_int << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
