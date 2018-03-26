@@ -69,7 +69,7 @@ char                _pf_kswCigarTable[] = "MIDNSHP=X";
 // parameters for split alignments
 int                 _pf_clipLen = 500;
 double              _pf_clipSim = 0.75;
-int                 _pf_splitLen = 500;
+int                 _pf_splitLen = 50;
 double              _pf_splitSim = 0.40;
 double              _pf_reverseSim = 0.60;
 
@@ -1594,7 +1594,15 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
             edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
 
-            if(readAlnLen >= _pf_splitLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_splitSim)
+            DEBUG({
+
+                fprintf(stderr, "\tDP: (%d, %d)\tread: (%u, %u)\treadLen: %u\tref: (%u, %u)\trefLen: %u\tsim: %f\n",
+                    i, i+1, readAlnStart, readAlnEnd, readAlnLen, 
+                    refAlnStart, refAlnEnd, refAlnLen, 
+                    1 - ((float)edResult.editDistance / readAlnLen));
+            });
+
+            if(abs(readAlnLen - refAlnLen) >= _pf_splitLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_splitSim)
             {
             //  uint8_t readAlnSeq_ksw[SEQ_MAX_LENGTH];
             //  uint8_t refAlnSeq_ksw[SEQ_MAX_LENGTH];
@@ -1628,18 +1636,27 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 refAlnLen_new = refAlnEnd_new - refAlnStart_new;
                 readAlnLen_new = readAlnEnd_new - readAlnStart_new;
 
+                DEBUG({
+                    fprintf(stderr, "\t\textension; read: (%u, %u)\tref: (%u, %u)\n",
+                        readAlnStart_new, readAlnEnd_new,
+                        refAlnStart_new, refAlnEnd_new);
+                });
+
                 // split alignment if extensions do not cross each other
-                if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
+                if(readAlnStart_new < readAlnEnd_new || refAlnStart_new < refAlnEnd_new)
                 {
+                    DEBUG({fprintf(stderr, "\t\t\tcheck1\n");});
                     edlibFreeAlignResult(edResult);
+                    DEBUG({fprintf(stderr, "\t\t\tcheck2\n");});
                     ////////////////////// make the first part of the split alignment
-                    if(readAlnStart_new > readAlnStart)
+                    if(readAlnStart_new > readAlnStart || refAlnStart_new > refAlnStart)
                     {
                         edResult = edlibAlign(query+readAlnStart, (readAlnStart_new - readAlnStart), refAlnSeq, (refAlnStart_new - refAlnStart), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
                         edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                         alnScore -= edResult.editDistance;
                         edlibFreeAlignResult(edResult);
                     }
+                    DEBUG({fprintf(stderr, "\t\t\tcheck3\n");});
                     // Write number of moves to cigar string.
                     tmpNum = (readLen - readAlnStart_new);
                     numDigits = 0;
@@ -1649,6 +1666,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                         numDigits++;
                     }
                     reverse(edCigar->end() - numDigits, edCigar->end());
+                    DEBUG({fprintf(stderr, "\t\t\tcheck4\n");});
                     // Write code of move to cigar string.
                     edCigar->push_back('I');
                     edCigar->push_back(0);  // Null character termination.
@@ -1657,18 +1675,25 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     tmpSam.cigar = alnCigar;
                     tmpSam.alnScore = alnScore;
                     tmpSam.posEnd = refAlnStart_new;
+                    DEBUG({fprintf(stderr, "\t\t\tcheck5\n");});
                     // push the split
                     map.samList.push_back(tmpSam);
                     map.totalScore += tmpSam.alnScore;
+                    DEBUG({fprintf(stderr, "\t\t\tcheck6\n");});
                     // reset
                     edCigar->clear();
                     alnScore = 0;
 
                     ////////////////////// check the middle part of the split (if the reverse complement of the middle part aligns well)
+                    DEBUG({fprintf(stderr, "\t\t\tcheck7\n");});
                     bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
+                    DEBUG({fprintf(stderr, "\t\t\tcheck7_1 %u %u\n", readAlnLen_new, refAlnLen_new);});
                     edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    DEBUG({fprintf(stderr, "\t\t\tcheck7_2\n");});
                     reverseComplete(query+readAlnStart_new, readAlnSeq_rev, readAlnLen_new);
+                    DEBUG({fprintf(stderr, "\t\t\tcheck7_3\n");});
                     edResult_rev = edlibAlign(readAlnSeq_rev, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
+                    DEBUG({fprintf(stderr, "\t\t\tcheck8\n");});
                     if((1 - ((double)edResult_rev.editDistance / readAlnLen_new)) > (1 - ((double)edResult.editDistance / readAlnLen_new))
                         && (1 - ((double)edResult_rev.editDistance / readAlnLen_new)) > _pf_reverseSim)
                     {
@@ -1714,8 +1739,9 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     edlibFreeAlignResult(edResult);
                     edlibFreeAlignResult(edResult_rev);
                     
+                    DEBUG({fprintf(stderr, "\t\t\tcheck9\n");});
                     ////////////////////// make the second part of the split alignment
-                    if(readAlnEnd_new < readAlnEnd)
+                    if(readAlnEnd_new < readAlnEnd || refAlnEnd_new < refAlnEnd)
                     {
                         reverseComplete(query+readAlnStart, readAlnSeq, readAlnLen);
                         reverseComplete(refAlnSeq, refAlnSeq_rev, refAlnLen);
@@ -1724,6 +1750,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                         alnScore -= edResult.editDistance;
                         edlibFreeAlignResult(edResult);
                     }
+                    DEBUG({fprintf(stderr, "\t\t\tcheck10\n");});
                     // Write code of move to cigar string.
                     edCigar->push_front('I');
                     // Write number of moves to cigar string.
@@ -1734,6 +1761,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     }
                     tmpSam.flag = (isRev ? 16 : 0);
                     tmpSam.pos = refAlnEnd_new;
+                    DEBUG({fprintf(stderr, "\t\t\tcheck11\n");});
                 }
                 else
                 {
