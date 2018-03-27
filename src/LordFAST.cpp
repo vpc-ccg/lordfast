@@ -1544,6 +1544,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
         }
     }
 
+    int numAnchorsSoFar = 1;
     for(i=0; i<chain.chainLen-1; i++)
     {
         // Write number of moves to cigar string.
@@ -1672,8 +1673,11 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     tmpSam.alnScore = alnScore;
                     tmpSam.posEnd = refAlnStart_new;
                     // push the split
-                    map.samList.push_back(tmpSam);
-                    map.totalScore += tmpSam.alnScore;
+                    if(numAnchorsSoFar > 1)
+                    {
+                        map.samList.push_back(tmpSam);
+                        map.totalScore += tmpSam.alnScore;
+                    }
                     // reset
                     edCigar->clear();
                     alnScore = 0;
@@ -1751,6 +1755,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     }
                     tmpSam.flag = (isRev ? 16 : 0);
                     tmpSam.pos = refAlnEnd_new;
+                    numAnchorsSoFar = 0;
                 }
                 else
                 {
@@ -1801,6 +1806,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 alnScore -= refAlnLen;
             }
         }
+        numAnchorsSoFar++;
     }
     // // last seed
     // fprintf(stderr, "\tseed\t%u\t%u\t%u\t%u\t%u\n", chain.seeds[i].qPos, chain.seeds[i].qPos + chain.seeds[i].len - 1, 
