@@ -339,7 +339,7 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     //
                     sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" << chrName << "\t" << chrBeg + 1 
                         << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
-                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
+                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore + readLen << "\n";
                 }
             }
             else // un-mapped
@@ -362,7 +362,7 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     //
                     sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
                         << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
-                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore << "\n";
+                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore  + readLen << "\n";
                 }
             }
         }
@@ -1419,7 +1419,8 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     // int32_t readAlnLen_new, refAlnLen_new;
 
     std::string alnCigar;
-    int editScore = 0;
+    int32_t editScore = 0;
+    int32_t editScore_split = 0;
     EdlibAlignResult edResult, edResult_rev;
     std::deque<char> *edCigar = new std::deque<char>();
     std::string edCigarStr;
@@ -1540,7 +1541,9 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             }
             reverse(edCigar->end() - numDigits, edCigar->end());
             // Write code of move to cigar string.
-            edCigar->push_back('S');
+            edCigar->push_back('I');
+            // update score
+            editScore -= readAlnLen;
         }
     }
 
@@ -1669,18 +1672,22 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     edCigar->push_back(0);  // Null character termination.
                     edCigarStr.assign(edCigar->begin(), edCigar->end());
                     fixCigar(alnCigar, edCigarStr);
+                    // update score
+                    editScore -= (readLen - readAlnStart_new);
+                    editScore_split -= (readLen - readAlnStart_new);
                     tmpSam.cigar = alnCigar;
                     tmpSam.posEnd = refAlnStart_new;
-                    tmpSam.alnScore = 2 * (tmpSam.posEnd - tmpSam.pos) + editScore; // alnScore is negative
+                    tmpSam.alnScore = editScore; // + readLen;
                     // push the split
                     if(numAnchorsSoFar > 1)
                     {
                         map.samList.push_back(tmpSam);
-                        map.totalScore += tmpSam.alnScore;
+                        map.totalScore += tmpSam.alnScore - editScore_split;
                     }
                     // reset
                     edCigar->clear();
                     editScore = 0;
+                    editScore_split = 0;
 
                     ////////////////////// check the middle part of the split (if the reverse complement of the middle part aligns well)
                     if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
@@ -1695,7 +1702,6 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             tmpSam.flag = (isRev ? 0 : 16); // Note that is opposite of the real direction
                             tmpSam.pos = refAlnStart_new;
                             tmpSam.posEnd = refAlnEnd_new;
-                            tmpSam.alnScore = 2 * (tmpSam.posEnd - tmpSam.pos) - edResult_rev.editDistance;
                             // Write number of moves to cigar string.
                             tmpNum = readAlnStart_new;
                             numDigits = 0;
@@ -1707,8 +1713,11 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             reverse(edCigar->end() - numDigits, edCigar->end());
                             // Write code of move to cigar string.
                             edCigar->push_back('I');
+                            editScore -= readAlnStart_new;
+                            editScore_split -= readAlnStart_new;
                             //
                             edlibGetCigar(edResult_rev.alignment, edResult_rev.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
+                            editScore -= edResult_rev.editDistance;
                             // Write number of moves to cigar string.
                             tmpNum = (readLen - readAlnEnd_new);
                             numDigits = 0;
@@ -1723,13 +1732,17 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             edCigar->push_back(0);  // Null character termination.
                             edCigarStr.assign(edCigar->begin(), edCigar->end());
                             fixCigar(alnCigar, edCigarStr);
+                            editScore -= (readLen - readAlnEnd_new);
+                            editScore_split -= (readLen - readAlnEnd_new);
                             tmpSam.cigar = alnCigar;
+                            tmpSam.alnScore = editScore; // + readLen
                             // push the split
                             map.samList.push_back(tmpSam);
-                            map.totalScore += tmpSam.alnScore;
+                            map.totalScore += tmpSam.alnScore - editScore_split;
                             // reset
                             edCigar->clear();
                             editScore = 0;
+                            editScore_split = 0;
                         }
                         edlibFreeAlignResult(edResult);
                         edlibFreeAlignResult(edResult_rev);
@@ -1753,6 +1766,8 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     {
                         edCigar->push_front('0' + tmpNum % 10);
                     }
+                    editScore -= readAlnEnd_new;
+                    editScore_split -= readAlnEnd_new;
                     tmpSam.flag = (isRev ? 16 : 0);
                     tmpSam.pos = refAlnEnd_new;
                     numAnchorsSoFar = 0;
@@ -1924,7 +1939,9 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             }
             reverse(edCigar->end() - numDigits, edCigar->end());
             // Write code of move to cigar string.
-            edCigar->push_back('S');
+            edCigar->push_back('I');
+            // update score
+            editScore -= readAlnLen;
         }
     }
 
@@ -1938,10 +1955,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     tmpSam.cigar = alnCigar;
     // map.cigar = (char*) malloc((alnCigar.size() + 1) * sizeof(char));
     // strcpy(map.cigar, alnCigar.c_str());
-    tmpSam.alnScore = 2 * (tmpSam.posEnd - tmpSam.pos) + editScore;
+    tmpSam.alnScore = editScore; // + readLen;
 
     map.samList.push_back(tmpSam);
-    map.totalScore += tmpSam.alnScore;
+    map.totalScore += tmpSam.alnScore - editScore_split;
 
     delete edCigar;
 
