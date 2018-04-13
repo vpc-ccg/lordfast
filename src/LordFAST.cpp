@@ -61,15 +61,15 @@ int8_t              _pf_kswMatch = 2; // 5
 int8_t              _pf_kswMismatch = 5; // 6
 int8_t              _pf_kswGapOpen = 2; // 10
 int8_t              _pf_kswGapExtend = 1; // 0
-int8_t              _pf_kswMatch_clip = 1;
-int8_t              _pf_kswMismatch_clip = 1;
+int8_t              _pf_kswMatch_clip = 2;
+int8_t              _pf_kswMismatch_clip = 16;
 int8_t              _pf_kswGapOpen_clip = 0;
 int8_t              _pf_kswGapExtend_clip = 1;
 char                _pf_kswCigarTable[] = "MIDNSHP=X";
 // parameters for split alignments
 int                 _pf_clipLen = 500;
 double              _pf_clipSim = 0.75;
-int                 _pf_splitLen = 50;
+int                 _pf_splitLen = 80;
 double              _pf_splitSim = 0.40;
 double              _pf_reverseSim = 0.60;
 
@@ -915,6 +915,14 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             }
         }
 
+        DEBUG({
+            int ilog;
+            for(ilog = 0; ilog < _pf_seedsSelected[id].num; ilog++)
+            {
+                fprintf(stderr, "\t####\tseed %d:\tqPos: %u\ttPos: %u\tlen: %u\t-\n", ilog+1, _pf_seedsSelected[id].list[ilog].qPos, _pf_seedsSelected[id].list[ilog].tPos, _pf_seedsSelected[id].list[ilog].len);
+            }
+        });
+
         if(chainAlg == CHAIN_ALG_CLASP)
         {
             if(seedPos_Low > 2000000000)
@@ -963,6 +971,14 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
                 _pf_seedsSelected[id].list[_pf_seedsSelected[id].num++] = _pf_seedsForward[id].list[i];
             }
         }
+
+        DEBUG({
+            int ilog;
+            for(ilog = 0; ilog < _pf_seedsSelected[id].num; ilog++)
+            {
+                fprintf(stderr, "\t####\tseed %d:\tqPos: %u\ttPos: %u\tlen: %u\t+\n", ilog+1, _pf_seedsSelected[id].list[ilog].qPos, _pf_seedsSelected[id].list[ilog].tPos, _pf_seedsSelected[id].list[ilog].len);
+            }
+        });
 
         if(chainAlg == CHAIN_ALG_CLASP)
         {
@@ -1465,7 +1481,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
             edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq_rev, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 
-            // fprintf(stderr, "\tbeg\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
+            fprintf(stderr, "\tbeg\tqLen: %d\talnEdit: %d\talnSim: %f\n", readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
 
             if(readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
             {
@@ -1625,7 +1641,8 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 // find the starting coordinate of the potential split
                 convertChar2int(readAlnSeq_ksw, query+readAlnStart, readAlnLen);
                 bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw);
-                ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+                // ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 1, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+                ksw_extend2(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, 8, 1, 4, 1, 100, 0, 200, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
                 readAlnStart_new = readAlnStart + qLen_ksw;
                 refAlnStart_new = refAlnStart + tLen_ksw;
 
@@ -1634,7 +1651,8 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 reverseComplementIntStr(readAlnSeq_ksw, readAlnSeq_ksw_rev, readAlnLen);
                 bwt_str_pac2int(refAlnStart, refAlnLen, refAlnSeq_ksw_rev);
                 reverseComplementIntStr(refAlnSeq_ksw, refAlnSeq_ksw_rev, refAlnLen);
-                ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 40, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+                // ksw_extend(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, _pf_kswGapOpen_clip, _pf_kswGapExtend_clip, 40, 0, 1, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
+                ksw_extend2(readAlnLen, readAlnSeq_ksw, refAlnLen, refAlnSeq_ksw, 5, _pf_kswMatrix_clip, 8, 1, 4, 1, 100, 0, 200, readAlnLen, &qLen_ksw, &tLen_ksw, 0, 0, 0);
                 readAlnEnd_new = readAlnEnd - qLen_ksw;
                 refAlnEnd_new = refAlnEnd - tLen_ksw;
 
@@ -1864,7 +1882,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             
             edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
             
-            // fprintf(stderr, "\tend\talnLen: %d\talnEdit: %d\tqLen: %d\talnSim: %.2f\n", edResult.alignmentLength, edResult.editDistance, readAlnLen, (1 - ((float)edResult.editDistance / readAlnLen)) * 100);
+            fprintf(stderr, "\tend\tqLen: %d\talnEdit: %d\talnSim: %f\n", readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
 
             if(readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
             {
