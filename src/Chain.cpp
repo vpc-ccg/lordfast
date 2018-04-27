@@ -203,7 +203,7 @@ int chain_seeds_clasp(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestCh
 
 inline double score_alpha(int distR, int distT, int seedLen)
 {
-    return seedLen;
+    return 10 * seedLen;
 }
 
 inline double score_betha(int distR, int distT, int seedLen)

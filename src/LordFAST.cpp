@@ -1481,7 +1481,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
             edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq_rev, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 
-            fprintf(stderr, "\tbeg\tqLen: %d\talnEdit: %d\talnSim: %f\n", readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
+            DEBUG({
+                fprintf(stderr, "\tbeg\tqLen: %d\talnEdit: %d\talnSim: %f\n", 
+                    readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
+            });
 
             if(readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
             {
@@ -1882,7 +1885,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             
             edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
             
-            fprintf(stderr, "\tend\tqLen: %d\talnEdit: %d\talnSim: %f\n", readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
+            DEBUG({
+                fprintf(stderr, "\tend\tqLen: %d\talnEdit: %d\talnSim: %f\n", 
+                    readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
+            });
 
             if(readAlnLen > _pf_clipLen && (1 - ((float)edResult.editDistance / readAlnLen)) < _pf_clipSim)
             {
