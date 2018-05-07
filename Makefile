@@ -1,7 +1,10 @@
-PROG_VERSION := "0.0.6"
+PROG_VERSION := 0.0.6
+VERBOSITY := 0
 
 all: OPTIMIZE_FLAGS build
-log: OPTIMIZE_FLAGS LOG_FLAG build
+log1: LOG1_FLAG OPTIMIZE_FLAGS build
+log2: LOG2_FLAG OPTIMIZE_FLAGS build
+log3: LOG3_FLAG OPTIMIZE_FLAGS build
 debug: DEBUG_FLAGS build
 profile: PROFILE_FLAGS build
 build: clean-exe SSE_FLAGS clasplib bwalib lordfast clean
@@ -75,10 +78,16 @@ DEBUG_FLAGS:
 	$(eval LIBS = $(LIBS) -ggdb)
 
 OPTIMIZE_FLAGS:
-	$(eval CXXFLAGS = $(CXXFLAGS) -O2)
+	$(eval CXXFLAGS = $(CXXFLAGS) -O2 -DVERBOSITY=$(VERBOSITY))
 
-LOG_FLAG:
-	$(eval CXXFLAGS = $(CXXFLAGS) -DDODEBUG)
+LOG1_FLAG:
+	$(eval VERBOSITY = 1)
+
+LOG2_FLAG:
+	$(eval VERBOSITY = 2)
+
+LOG3_FLAG:
+	$(eval VERBOSITY = 3)
 
 PROFILE_FLAGS:
 	$(eval CXXFLAGS = $(CXXFLAGS) -pg -g)

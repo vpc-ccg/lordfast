@@ -404,13 +404,13 @@ void* mapSeq(void *idp)
         _pf_topMappings[id].seq    = read->seq;
         _pf_topMappings[id].qual   = read->qual;
 
-        DEBUG({
-            fprintf(stderr, ">%s length:%d\n", read->name, readLen);
+        LOG1({
+            fprintf(stderr, ">%s\tlen: %d\n", read->name, readLen);
         });
 
         if(readLen < CHUNK_OVERLAP)
         {
-            DEBUG({
+            LOG1({
                 fprintf(stderr, "\tunmapped\tshortRead\n", read->name, readLen);
             });
 
@@ -437,9 +437,9 @@ void* mapSeq(void *idp)
         // sort the windows based on the score!
         std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
         
-        DEBUG({
+        LOG1({
             int ilog;
-            fprintf(stderr, "\tcandidate\tnum: %d\n", _pf_topWins[id].num);
+            // fprintf(stderr, "\tcandidate\tnum: %d\n", _pf_topWins[id].num);
             for(ilog = 0; ilog < _pf_topWins[id].num; ilog++)
             {
                 fprintf(stderr, "\tcandidate %d:\t%u\t%u\t%c\t%f\n", ilog+1, _pf_topWins[id].list[ilog].tStart, _pf_topWins[id].list[ilog].tEnd,
@@ -915,11 +915,11 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             }
         }
 
-        DEBUG({
+        LOG2({
             int ilog;
             for(ilog = 0; ilog < _pf_seedsSelected[id].num; ilog++)
             {
-                fprintf(stderr, "\t####\tseed %d:\tqPos: %u\ttPos: %u\tlen: %u\t-\n", ilog+1, _pf_seedsSelected[id].list[ilog].qPos, _pf_seedsSelected[id].list[ilog].tPos, _pf_seedsSelected[id].list[ilog].len);
+                fprintf(stderr, "\tseed %d:\tqPos: %u\ttPos: %u\tlen: %u\t-\n", ilog+1, _pf_seedsSelected[id].list[ilog].qPos, _pf_seedsSelected[id].list[ilog].tPos, _pf_seedsSelected[id].list[ilog].len);
             }
         });
 
@@ -931,8 +931,10 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
-            DEBUG({
-                fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+            LOG1({
+                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
+                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                    (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
 
             if(seedPos_Low > 2000000000)
@@ -942,6 +944,12 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         else if(chainAlg == CHAIN_ALG_DPN2)
         {
             chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+
+            LOG1({
+                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
+                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                    (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
+            });
         }
         
         // _pf_topChains[id].num = 1;
@@ -972,11 +980,11 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             }
         }
 
-        DEBUG({
+        LOG2({
             int ilog;
             for(ilog = 0; ilog < _pf_seedsSelected[id].num; ilog++)
             {
-                fprintf(stderr, "\t####\tseed %d:\tqPos: %u\ttPos: %u\tlen: %u\t+\n", ilog+1, _pf_seedsSelected[id].list[ilog].qPos, _pf_seedsSelected[id].list[ilog].tPos, _pf_seedsSelected[id].list[ilog].len);
+                fprintf(stderr, "\tseed %d:\tqPos: %u\ttPos: %u\tlen: %u\t+\n", ilog+1, _pf_seedsSelected[id].list[ilog].qPos, _pf_seedsSelected[id].list[ilog].tPos, _pf_seedsSelected[id].list[ilog].len);
             }
         });
 
@@ -988,8 +996,10 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
-            DEBUG({
-                fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
+            LOG1({
+                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
+                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                    (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
 
             if(seedPos_Low > 2000000000)
@@ -999,6 +1009,12 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         else if(chainAlg == CHAIN_ALG_DPN2)
         {
             chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
+
+            LOG1({
+                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
+                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                    (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
+            });
         }
 
         // _pf_topChains[id].num = 1;
@@ -1481,7 +1497,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
             edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq_rev, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 
-            DEBUG({
+            LOG2({
                 fprintf(stderr, "\tbeg\tqLen: %d\talnEdit: %d\talnSim: %f\n", 
                     readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
             });
@@ -1618,7 +1634,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
             edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
 
-            DEBUG({
+            LOG2({
 
                 fprintf(stderr, "\tDP: (%d, %d)\tread: (%u, %u)\treadLen: %u\tref: (%u, %u)\trefLen: %u\tsim: %f\n",
                     i, i+1, readAlnStart, readAlnEnd, readAlnLen, 
@@ -1662,7 +1678,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 refAlnLen_new = refAlnEnd_new - refAlnStart_new;
                 readAlnLen_new = readAlnEnd_new - readAlnStart_new;
 
-                DEBUG({
+                LOG2({
                     fprintf(stderr, "\t\textension; read: (%u, %u)\tref: (%u, %u)\n",
                         readAlnStart_new, readAlnEnd_new,
                         refAlnStart_new, refAlnEnd_new);
@@ -1885,7 +1901,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             
             edResult = edlibAlign(query+readAlnStart, readAlnLen, refAlnSeq, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
             
-            DEBUG({
+            LOG2({
                 fprintf(stderr, "\tend\tqLen: %d\talnEdit: %d\talnSim: %f\n", 
                     readAlnLen, edResult.editDistance, (1 - ((float)edResult.editDistance / readAlnLen)));
             });

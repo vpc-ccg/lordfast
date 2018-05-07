@@ -48,10 +48,22 @@
 #include <string>
 #include <sstream>
 
-#ifdef DODEBUG 
-#define DEBUG(cmd) cmd
-#else 
-#define DEBUG(cmd)
+#if VERBOSITY < 1
+#define LOG1(cmd)
+#define LOG2(cmd)
+#define LOG3(cmd)
+#elif VERBOSITY < 2
+#define LOG1(cmd) cmd
+#define LOG2(cmd)
+#define LOG3(cmd)
+#elif VERBOSITY < 3
+#define LOG1(cmd) cmd
+#define LOG2(cmd) cmd
+#define LOG3(cmd)
+#elif VERBOSITY >= 3
+#define LOG1(cmd) cmd
+#define LOG2(cmd) cmd
+#define LOG3(cmd) cmd
 #endif
 
 #define SEQ_MAX_LENGTH      50000       // Seq Max Length
