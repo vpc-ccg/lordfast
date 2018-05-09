@@ -340,7 +340,13 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" << chrName << "\t" << chrBeg + 1 
                         << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
-                        << "AS:i:" << map.mappings[i].samList[j].alnScore + readLen << "\t" << "XS:i:" << 0 << "\n";
+                        << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
+                        << "XS:i:" << 0 << "\n";
+                        // << "XS:i:" << 0 << "\t"
+                        // << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
+                        // << "TS:i:" << map.mappings[i].totalScore << "\t"
+                        // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+                        // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
                 }
             }
             else // un-mapped
@@ -349,24 +355,31 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     << map.seq << "\t" << map.qual << "\n";
             }
         }
-        // else
-        // {
-        //     if(map.mappings[i].samList.size() > 0) // mapped
-        //     {
-        //         //
-        //         mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
-        //         //
-        //         for(j = 0; j < map.mappings[i].samList.size(); j++)
-        //         {
-        //             map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
-        //             bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
-        //             //
-        //             sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
-        //                 << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
-        //                 << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" << "AS:i:" << map.mappings[i].samList[j].alnScore  + readLen << "\n";
-        //         }
-        //     }
-        // }
+        else
+        {
+            if(map.mappings[i].samList.size() > 0) // mapped
+            {
+                //
+                mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
+                //
+                for(j = 0; j < map.mappings[i].samList.size(); j++)
+                {
+                    map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
+                    bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
+                    //
+                    sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
+                        << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
+                        << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
+                        << "XS:i:" << 0 << "\n";
+                        // << "XS:i:" << 0 << "\t"
+                        // << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
+                        // << "TS:i:" << map.mappings[i].totalScore << "\t"
+                        // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+                        // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\t"
+                }
+            }
+        }
     }
     //
     if(sout.tellp() > opt_outputBufferSize)
@@ -453,7 +466,7 @@ void* mapSeq(void *idp)
         if(_pf_topWins[id].list[0].score >= scoreRatio * _pf_topWins[id].list[1].score) // significantly better window => coarse mode
         {
             _pf_topMappings[id].mappings[0].samList.clear();
-            _pf_topMappings[id].mappings[0].totalScore = 0;
+            // _pf_topMappings[id].mappings[0].totalScore = 0;
             alignWin(_pf_topWins[id].list[0], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id].mappings[0], id);
             printSamEntry(_pf_topMappings[id], readLen, 1, outBuffer);
         }
@@ -466,7 +479,7 @@ void* mapSeq(void *idp)
             for(i=0; i<_pf_topWins[id].num; i++)
             {
                 _pf_topMappings[id].mappings[i].samList.clear();
-                _pf_topMappings[id].mappings[i].totalScore = 0;
+                // _pf_topMappings[id].mappings[i].totalScore = 0;
                 alignWin(_pf_topWins[id].list[i], read->seq, seq_rev, readLen, read->qual, qual_rev, _pf_topMappings[id].mappings[i], id);
             }
 
@@ -890,7 +903,8 @@ bool compareWin(const Win_t& w1, const Win_t& w2)
 
 bool compareSam(const SamList_t& s1, const SamList_t& s2)
 {
-    return (s1.samList.size() > 0 && s2.samList.size() == 0) || (s1.totalScore > s2.totalScore);
+    // return (s1.samList.size() > 0 && s2.samList.size() == 0) || (s1.totalScore > s2.totalScore);
+    return (s1.totalScore > s2.totalScore);
 }
 
 /**********************************************/
@@ -958,6 +972,19 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         {
             // fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
             alignChain(_pf_topChains[id].list[0], query_rev, rLen, 1, map);
+            map.totalScore = 0;
+            for(i = 0; i < map.samList.size(); i++)
+            {
+                map.samList[i].alnScore = map.samList[i].nmCount + (map.samList[i].qEnd - map.samList[i].qStart);
+                map.totalScore += map.samList[i].nmCount;
+            }
+            for(i = 0; i < map.samList.size() - 1; i++)
+            {
+                uint32_t diff = abs(map.samList[i+1].pos - map.samList[i].posEnd) + abs(map.samList[i+1].qStart - map.samList[i].qEnd);
+                // fprintf(stderr, "diff: %u\n", diff);
+                map.totalScore -= 0.15 * diff;
+                // if(diff > 1) map.totalScore -= (25 * log(diff));
+            }
         }
         else
         {
@@ -1023,6 +1050,19 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         {
             // fprintf(stderr, "\twinCount: %f chainLen: %u \n", win.score, _pf_topChains[id].list[0].chainLen);
             alignChain(_pf_topChains[id].list[0], query, rLen, 0, map);
+            map.totalScore = 0;
+            for(i = 0; i < map.samList.size(); i++)
+            {
+                map.samList[i].alnScore = map.samList[i].nmCount + (map.samList[i].qEnd - map.samList[i].qStart);
+                map.totalScore += map.samList[i].nmCount;
+            }
+            for(i = 0; i < map.samList.size() - 1; i++)
+            {
+                uint32_t diff = abs(map.samList[i+1].pos - map.samList[i].posEnd) + abs(map.samList[i+1].qStart - map.samList[i].qEnd);
+                // fprintf(stderr, "diff: %u\n", diff);
+                map.totalScore -= 0.15 * diff;
+                // if(diff > 1) map.totalScore -= (25 * log(diff));
+            }
         }
         else
         {
@@ -1453,7 +1493,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
     std::string alnCigar;
     int32_t editScore = 0;
-    int32_t editScore_split = 0;
+    // int32_t editScore_clip = 0;
     EdlibAlignResult edResult, edResult_rev;
     std::deque<char> *edCigar = new std::deque<char>();
     std::string edCigarStr;
@@ -1481,6 +1521,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     tmpSam.flag = (isRev ? 16 : 0);
     // set sam pos
     tmpSam.pos = chain.seeds[0].tPos;
+    tmpSam.qStart = chain.seeds[0].qPos;
 
     // extend before first seed
     readAlnLen = chain.seeds[0].qPos;
@@ -1535,6 +1576,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     editScore -= edResult.editDistance;
                     // fix sam pos
                     tmpSam.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                    tmpSam.qStart = chain.seeds[0].qPos - qLen_ksw;
 
                     // Write code of move to cigar string.
                     edCigar->push_front('I');
@@ -1545,7 +1587,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                         edCigar->push_front('0' + tmpNum % 10);
                     }
                     // update score
-                    editScore -= (readAlnLen - qLen_ksw);
+                    // editScore_clip -= (readAlnLen - qLen_ksw);
                 }
                 else // use the already calculated results
                 {
@@ -1553,6 +1595,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                     // fix sam pos
                     tmpSam.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                    tmpSam.qStart = 0;
                 }
             }
             else
@@ -1561,6 +1604,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                 // fix sam pos
                 tmpSam.pos = chain.seeds[0].tPos - edResult.endLocations[0] - 1;
+                tmpSam.qStart = 0;
             }
 
             edlibFreeAlignResult(edResult);
@@ -1579,7 +1623,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             // Write code of move to cigar string.
             edCigar->push_back('I');
             // update score
-            editScore -= readAlnLen;
+            // editScore_clip -= readAlnLen;
         }
     }
 
@@ -1711,21 +1755,25 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     edCigarStr.assign(edCigar->begin(), edCigar->end());
                     fixCigar(alnCigar, edCigarStr);
                     // update score
-                    editScore -= (readLen - readAlnStart_new);
-                    editScore_split -= (readLen - readAlnStart_new);
+                    // editScore_clip -= (readLen - readAlnStart_new);
                     tmpSam.cigar = alnCigar;
                     tmpSam.posEnd = refAlnStart_new;
-                    tmpSam.alnScore = editScore; // + readLen;
+                    tmpSam.qEnd = readAlnStart_new;
+                    // tmpSam.alnScore = editScore + editScore_clip + readLen;
+                    // tmpSam.alnScore = editScore;
+                    tmpSam.nmCount = editScore;
+                    // tmpSam.clipCount = editScore_clip;
                     // push the split
                     if(numAnchorsSoFar > 1)
                     {
                         map.samList.push_back(tmpSam);
-                        map.totalScore += tmpSam.alnScore - editScore_split;
+                        // map.totalScore += tmpSam.alnScore - editScore_split;
+                        // map.totalScore += tmpSam.alnScore;
                     }
                     // reset
                     edCigar->clear();
                     editScore = 0;
-                    editScore_split = 0;
+                    // editScore_clip = 0;
 
                     ////////////////////// check the middle part of the split (if the reverse complement of the middle part aligns well)
                     if(readAlnStart_new < readAlnEnd_new && refAlnStart_new < refAlnEnd_new)
@@ -1739,7 +1787,9 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                         {
                             tmpSam.flag = (isRev ? 0 : 16); // Note that is opposite of the real direction
                             tmpSam.pos = refAlnStart_new;
+                            tmpSam.qStart = readAlnStart_new;
                             tmpSam.posEnd = refAlnEnd_new;
+                            tmpSam.qEnd = readAlnEnd_new;
                             // Write number of moves to cigar string.
                             tmpNum = readAlnStart_new;
                             numDigits = 0;
@@ -1751,8 +1801,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             reverse(edCigar->end() - numDigits, edCigar->end());
                             // Write code of move to cigar string.
                             edCigar->push_back('I');
-                            editScore -= readAlnStart_new;
-                            editScore_split -= readAlnStart_new;
+                            // editScore_clip -= readAlnStart_new;
                             //
                             edlibGetCigar(edResult_rev.alignment, edResult_rev.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                             editScore -= edResult_rev.editDistance;
@@ -1770,17 +1819,20 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             edCigar->push_back(0);  // Null character termination.
                             edCigarStr.assign(edCigar->begin(), edCigar->end());
                             fixCigar(alnCigar, edCigarStr);
-                            editScore -= (readLen - readAlnEnd_new);
-                            editScore_split -= (readLen - readAlnEnd_new);
+                            // editScore_clip -= (readLen - readAlnEnd_new);
                             tmpSam.cigar = alnCigar;
-                            tmpSam.alnScore = editScore; // + readLen
+                            // tmpSam.alnScore = editScore + editScore_clip + readLen;
+                            // tmpSam.alnScore = editScore;
+                            tmpSam.nmCount = editScore;
+                            // tmpSam.clipCount = editScore_clip;
                             // push the split
                             map.samList.push_back(tmpSam);
-                            map.totalScore += tmpSam.alnScore - editScore_split;
+                            // map.totalScore += tmpSam.alnScore - editScore_split;
+                            // map.totalScore += tmpSam.alnScore;
                             // reset
                             edCigar->clear();
                             editScore = 0;
-                            editScore_split = 0;
+                            // editScore_clip = 0;
                         }
                         edlibFreeAlignResult(edResult);
                         edlibFreeAlignResult(edResult_rev);
@@ -1804,10 +1856,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     {
                         edCigar->push_front('0' + tmpNum % 10);
                     }
-                    editScore -= readAlnEnd_new;
-                    editScore_split -= readAlnEnd_new;
+                    // editScore_clip -= readAlnEnd_new;
                     tmpSam.flag = (isRev ? 16 : 0);
                     tmpSam.pos = refAlnEnd_new;
+                    tmpSam.qStart = readAlnEnd_new;
                     numAnchorsSoFar = 0;
                 }
                 else
@@ -1887,6 +1939,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
     // set sam posEnd
     tmpSam.posEnd = chain.seeds[i].tPos + chain.seeds[i].len - 1;
+    tmpSam.qEnd = chain.seeds[i].qPos + chain.seeds[i].len - 1;
 
     // extend after last seed
     readAlnStart = chain.seeds[i].qPos + chain.seeds[i].len;
@@ -1935,6 +1988,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     editScore -= edResult.editDistance;
                     // fix sam pos
                     tmpSam.posEnd = refAlnStart + edResult.endLocations[0];
+                    tmpSam.qEnd = readAlnStart + qLen_ksw;
 
                     // Write number of moves to cigar string.
                     tmpNum = (readAlnLen - qLen_ksw);
@@ -1948,7 +2002,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     // Write code of move to cigar string.
                     edCigar->push_back('I');
                     // update score
-                    editScore -= (readAlnLen - qLen_ksw);
+                    // editScore_clip -= (readAlnLen - qLen_ksw);
                 }
                 else // use the already calculated results
                 {
@@ -1956,6 +2010,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                     // fix sam posEnd
                     tmpSam.posEnd = refAlnStart + edResult.endLocations[0];
+                    tmpSam.qEnd = readLen;
                 }
             }
             else
@@ -1964,6 +2019,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                 edlibGetCigar(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                 // fix sam posEnd
                 tmpSam.posEnd = refAlnStart + edResult.endLocations[0];
+                tmpSam.qEnd = readLen;
             }
 
             edlibFreeAlignResult(edResult);
@@ -1982,7 +2038,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             // Write code of move to cigar string.
             edCigar->push_back('I');
             // update score
-            editScore -= readAlnLen;
+            // editScore_clip -= readAlnLen;
         }
     }
 
@@ -1996,10 +2052,14 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     tmpSam.cigar = alnCigar;
     // map.cigar = (char*) malloc((alnCigar.size() + 1) * sizeof(char));
     // strcpy(map.cigar, alnCigar.c_str());
-    tmpSam.alnScore = editScore; // + readLen;
+    // tmpSam.alnScore = editScore + editScore_clip + readLen;
+    // tmpSam.alnScore = editScore;
+    tmpSam.nmCount = editScore;
+    // tmpSam.clipCount = editScore_clip;
 
     map.samList.push_back(tmpSam);
-    map.totalScore += tmpSam.alnScore - editScore_split;
+    // map.totalScore += tmpSam.alnScore - editScore_split;
+    // map.totalScore += tmpSam.alnScore;
 
     delete edCigar;
 

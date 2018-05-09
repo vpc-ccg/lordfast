@@ -68,6 +68,8 @@ public:
     // char *rName;
     uint32_t pos;
     uint32_t posEnd;
+    uint32_t qStart;
+    uint32_t qEnd;
     // uint8_t mapQ;
     std::string cigar;
     // char *cigar;
@@ -75,6 +77,8 @@ public:
     // char *seq;
     // char *qual;
     int32_t alnScore;
+    int32_t nmCount;
+    // int32_t clipCount;
 };
 
 class SamList_t
