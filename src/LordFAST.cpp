@@ -473,8 +473,9 @@ void* mapSeq(void *idp)
         else // fine mode
         {
             _pf_topWins[id].num = 0;
-            findTopWins_fine(readLen, _pf_seedsForward + id, 0, t+_pf_seqListSize+1, (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for forward
-            findTopWins_fine(readLen, _pf_seedsReverse + id, 1, -(t+_pf_seqListSize+1), (float)_pf_topWins[id].list[0].score/scoreRatio, id); //find candidate paths for reverse
+            float tmp_minScore = (float)_pf_topWins[id].list[0].score / scoreRatio;
+            findTopWins_fine(readLen, _pf_seedsForward + id, 0, t+_pf_seqListSize+1, tmp_minScore, id); //find candidate paths for forward
+            findTopWins_fine(readLen, _pf_seedsReverse + id, 1, -(t+_pf_seqListSize+1), tmp_minScore, id); //find candidate paths for reverse
 
             for(i=0; i<_pf_topWins[id].num; i++)
             {
