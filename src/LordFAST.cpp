@@ -355,31 +355,31 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     << map.seq << "\t" << map.qual << "\n";
             }
         }
-        else
-        {
-            if(map.mappings[i].samList.size() > 0) // mapped
-            {
-                //
-                mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
-                //
-                for(j = 0; j < map.mappings[i].samList.size(); j++)
-                {
-                    map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
-                    bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
-                    //
-                    sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
-                        << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
-                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
-                        << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
-                        << "XS:i:" << 0 << "\n";
-                        // << "XS:i:" << 0 << "\t"
-                        // << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
-                        // << "TS:i:" << map.mappings[i].totalScore << "\t"
-                        // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
-                        // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\t"
-                }
-            }
-        }
+        // else
+        // {
+        //     if(map.mappings[i].samList.size() > 0) // mapped
+        //     {
+        //         //
+        //         mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
+        //         //
+        //         for(j = 0; j < map.mappings[i].samList.size(); j++)
+        //         {
+        //             map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
+        //             bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
+        //             //
+        //             sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
+        //                 << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+        //                 << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
+        //                 << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
+        //                 << "XS:i:" << 0 << "\n";
+        //                 // << "XS:i:" << 0 << "\t"
+        //                 // << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
+        //                 // << "TS:i:" << map.mappings[i].totalScore << "\t"
+        //                 // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+        //                 // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\t"
+        //         }
+        //     }
+        // }
     }
     //
     if(sout.tellp() > opt_outputBufferSize)
@@ -947,8 +947,9 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
-                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
-                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
+                    _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
+                    _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
                     (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
 
@@ -961,8 +962,9 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
-                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
-                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
+                    _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
+                    _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
                     (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
         }
@@ -1025,8 +1027,9 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
-                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
-                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
+                    _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
+                    _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
                     (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
 
@@ -1039,8 +1042,9 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
-                // fprintf(stderr, "\tchain\twinCount: %f\tchainLen: %u\tchainScore: %f\n", win.score, _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
-                fprintf(stderr, "\tchain\t%u\t%u\t%c\tchainLen: %u\tchainScore: %f\n", _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
+                fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
+                    _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
+                    _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
                     (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
         }
@@ -1681,9 +1685,10 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
 
             LOG2({
 
-                fprintf(stderr, "\tDP: (%d, %d)\tread: (%u, %u)\treadLen: %u\tref: (%u, %u)\trefLen: %u\tsim: %f\n",
+                fprintf(stderr, "\tDP: (%d, %d)\tread: (%u, %u)\treadLen: %u\tref: (%u, %u)\trefLen: %u\tedit: %d\tsim: %f\n",
                     i, i+1, readAlnStart, readAlnEnd, readAlnLen, 
                     refAlnStart, refAlnEnd, refAlnLen, 
+                    edResult.editDistance, 
                     1 - ((float)edResult.editDistance / readAlnLen));
             });
 
