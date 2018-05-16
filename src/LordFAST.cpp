@@ -906,6 +906,8 @@ bool compareSam(const SamList_t& s1, const SamList_t& s2)
 {
     // return (s1.samList.size() > 0 && s2.samList.size() == 0) || (s1.totalScore > s2.totalScore);
     return (s1.totalScore > s2.totalScore);
+    // return (s1.totalScore > s2.totalScore || 
+    //         (s1.totalScore == s2.totalScore && s1.samList.size() > 0 && s2.samList.size() > 0 && s1.samList.front().pos < s2.samList.front().pos));
 }
 
 /**********************************************/
