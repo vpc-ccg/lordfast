@@ -341,12 +341,12 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                         << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
                         << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
-                        << "XS:i:" << 0 << "\n";
-                        // << "XS:i:" << 0 << "\t"
-                        // << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
-                        // << "TS:i:" << map.mappings[i].totalScore << "\t"
-                        // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
-                        // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
+                        // << "XS:i:" << 0 << "\n";
+                        << "XS:i:" << 0 << "\t"
+                        << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
+                        << "TS:i:" << map.mappings[i].totalScore << "\t"
+                        << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+                        << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
                 }
             }
             else // un-mapped
@@ -355,31 +355,31 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     << map.seq << "\t" << map.qual << "\n";
             }
         }
-        // else
-        // {
-        //     if(map.mappings[i].samList.size() > 0) // mapped
-        //     {
-        //         //
-        //         mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
-        //         //
-        //         for(j = 0; j < map.mappings[i].samList.size(); j++)
-        //         {
-        //             map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
-        //             bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
-        //             //
-        //             sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
-        //                 << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
-        //                 << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
-        //                 << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
-        //                 << "XS:i:" << 0 << "\n";
-        //                 // << "XS:i:" << 0 << "\t"
-        //                 // << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
-        //                 // << "TS:i:" << map.mappings[i].totalScore << "\t"
-        //                 // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
-        //                 // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\t"
-        //         }
-        //     }
-        // }
+        else
+        {
+            if(map.mappings[i].samList.size() > 0) // mapped
+            {
+                //
+                mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
+                //
+                for(j = 0; j < map.mappings[i].samList.size(); j++)
+                {
+                    map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
+                    bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
+                    //
+                    sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
+                        << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
+                        << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
+                        // << "XS:i:" << 0 << "\n";
+                        << "XS:i:" << 0 << "\t"
+                        << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
+                        << "TS:i:" << map.mappings[i].totalScore << "\t"
+                        << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+                        << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
+                }
+            }
+        }
     }
     //
     if(sout.tellp() > opt_outputBufferSize)
@@ -988,6 +988,9 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
                 map.totalScore -= 0.15 * diff;
                 // if(diff > 1) map.totalScore -= (25 * log(diff));
             }
+            // penalize clipping
+            map.totalScore -= map.samList.front().qStart;
+            map.totalScore -= (rLen - map.samList.back().qEnd);
         }
         else
         {
@@ -1068,6 +1071,9 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
                 map.totalScore -= 0.15 * diff;
                 // if(diff > 1) map.totalScore -= (25 * log(diff));
             }
+            // penalize clipping
+            map.totalScore -= map.samList.front().qStart;
+            map.totalScore -= (rLen - map.samList.back().qEnd);
         }
         else
         {
