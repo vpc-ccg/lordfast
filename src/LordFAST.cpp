@@ -1541,7 +1541,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     refAlnLen = readAlnLen + 20; // TODO: how much extra sequence?
     if(readAlnLen > 0)
     {
-        if(chain.seeds[0].tPos - refAlnLen >= chrBeg)
+        if((int64_t)chain.seeds[0].tPos - refAlnLen >= (int64_t)chrBeg)
         {
             reverseComplete(query, readAlnSeq, readAlnLen);
 
