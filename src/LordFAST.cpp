@@ -341,12 +341,12 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                         << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
                         << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
-                        // << "XS:i:" << 0 << "\n";
                         << "XS:i:" << 0 << "\t"
-                        << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
-                        << "TS:i:" << map.mappings[i].totalScore << "\t"
-                        << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
-                        << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
+                        << "NM:i:" << map.mappings[i].samList[j].nmCount << "\n";
+                        // << "XS:i:" << 0 << "\t"
+                        // << "TS:i:" << map.mappings[i].totalScore << "\t"
+                        // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+                        // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
                 }
             }
             else // un-mapped
@@ -371,12 +371,12 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                         << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
                         << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
-                        // << "XS:i:" << 0 << "\n";
                         << "XS:i:" << 0 << "\t"
-                        << "NM:i:" << map.mappings[i].samList[j].nmCount << "\t"
-                        << "TS:i:" << map.mappings[i].totalScore << "\t"
-                        << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
-                        << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
+                        << "NM:i:" << map.mappings[i].samList[j].nmCount << "\n";
+                        // << "XS:i:" << 0 << "\t"
+                        // << "TS:i:" << map.mappings[i].totalScore << "\t"
+                        // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+                        // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
                 }
             }
         }
