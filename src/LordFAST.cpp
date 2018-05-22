@@ -987,7 +987,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             {
                 uint32_t diff = abs(map.samList[i+1].pos - map.samList[i].posEnd) + abs(map.samList[i+1].qStart - map.samList[i].qEnd);
                 // fprintf(stderr, "diff: %u\n", diff);
-                map.totalScore -= 0.15 * diff;
+                map.totalScore -= gapPenalty * diff;
                 // if(diff > 1) map.totalScore -= (25 * log(diff));
             }
             // penalize clipping

@@ -77,6 +77,9 @@ double                  MAX_MEMORY = 4;// GB
 int                     THREAD_ID[255];
 // chainAlg_t              chainAlg = CHAIN_ALG_CLASP;
 chainAlg_t              chainAlg = CHAIN_ALG_DPN2;
+double                  chainReward = 9.3;
+double                  chainPenalty = 11.4;
+double                  gapPenalty = 0.15;
 
 #if (defined(__MACH__) && defined(__APPLE__))
 #include <mach-o/getsect.h>
@@ -133,6 +136,9 @@ int parseCommandLine (int argc, char *argv[])
         {"maxRefHit",               required_argument,  0,                  'm'},
         {"numMap",                  required_argument,  0,                  'n'},
         {"chainAlg",                required_argument,  0,                  'A'},
+        {"chainReward",             required_argument,  0,                  'R'},
+        {"chainPenalty",            required_argument,  0,                  'P'},
+        {"gapPenalty",              required_argument,  0,                  'G'},
         {"help",                    no_argument,        0,                  'h'},
         {"version",                 no_argument,        0,                  'v'},
         // {"sl",                       required_argument,  0,                  'l'},
@@ -142,7 +148,7 @@ int parseCommandLine (int argc, char *argv[])
 
 
 
-    while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:l:c:e:m:n:A:hv", longOptions, &index))!= -1 )
+    while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:l:c:e:m:n:A:R:P:G:hv", longOptions, &index))!= -1 )
     {
         switch (o)
         {
@@ -218,6 +224,15 @@ int parseCommandLine (int argc, char *argv[])
                     // chainAlg = CHAIN_ALG_CLASP;
                     chainAlg = CHAIN_ALG_DPN2;
                 }
+                break;
+            case 'R':
+                chainReward = atof(optarg);
+                break;
+            case 'P':
+                chainPenalty = atof(optarg);
+                break;
+            case 'G':
+                gapPenalty = atof(optarg);
                 break;
             case 'h':
                 printHelp();

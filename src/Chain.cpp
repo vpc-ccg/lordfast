@@ -201,17 +201,20 @@ int chain_seeds_clasp(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestCh
     return 1;
 }
 
-inline double score_alpha(int distR, int distT, int seedLen)
+inline double score_reward(int distR, int distT, int seedLen)
 {
-    // return 10 * seedLen;
-    return 7 * seedLen;
+    // return 7 * seedLen;
+    return chainReward * (double)WINDOW_SIZE;
 }
 
-inline double score_betha(int distR, int distT, int seedLen)
+inline double score_penalty(int distR, int distT, int seedLen)
 {
     int maxD = distR < distT ? distT : distR;
     int minD = distR < distT ? distR : distT;
-    return 0.15 * (maxD - minD) + 0 * minD;
+    // return 0.15 * (maxD - minD) + 0 * minD;
+    int dist = (maxD - minD);
+    if(dist <= 1) return 0;
+    return 0.1 * dist + chainPenalty * log(dist);
 }
 
 bool compare_seed(Seed_t a, Seed_t b)
@@ -221,11 +224,6 @@ bool compare_seed(Seed_t a, Seed_t b)
 
 void chain_seeds_n2(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChain)
 {
-    // f(i) = max{max_{j<i}{f(i) + a(i, j) - b(i, j)}, w_i}
-    // a(i, j) = min{min{y_i - y_j, x_i - x_j}, w_i}
-    // b(i, j) = inf     y_j >= y_i || max{y_i - y_j, x_i - x_j} > maxDist
-    // b(i, j) = gap_cost
-
     int i, j;
     // int n = seedList.size();
     int distR, distT;
@@ -262,9 +260,9 @@ void chain_seeds_n2(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestChai
             // if(distT < 0) continue;    
             // fprintf(stderr, "\t%d", distT);
 
-            aScore = score_alpha(distR, distT, fragment_list[i].len);
+            aScore = score_reward(distR, distT, fragment_list[i].len);
             // aScore = fragment_list[i].len + 1;
-            bScore = score_betha(distR, distT, fragment_list[i].len);
+            bScore = score_penalty(distR, distT, fragment_list[i].len);
 
             // fprintf(stderr, "\tscore: %lf", dp[j] + aScore - bScore);
             if(dp[j] + aScore - bScore > dp[i])

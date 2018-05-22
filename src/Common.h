@@ -127,6 +127,9 @@ extern int              fileCnt;
 extern long long        memUsage;
 extern char             *alphabet;
 extern chainAlg_t       chainAlg;
+extern double           chainReward;
+extern double           chainPenalty;
+extern double           gapPenalty;
 
 #pragma pack(push, 1)
 typedef struct
