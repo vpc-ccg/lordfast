@@ -1548,30 +1548,27 @@ inline void edlibMD_pushback(const char *query, const char *target, EdlibAlignRe
 
     int qIndex = 0;
     int tIndex = 0;
-    int lastWasDeletion = 0; // flag
-
     for(int i = 0; i < edResult.alignmentLength; i++)
     {
         switch(edResult.alignment[i])
         {
         case 0:
             md->push_back('=');
-            tIndex++;
-        case 1:
             qIndex++;
-            lastWasDeletion = 0;
+            tIndex++;
+            break;
+        case 1:
+            md->push_back('-');
+            qIndex++;
             break;
         case 2:
-            if(lastWasDeletion == 0) md->push_back('^');
             md->push_back(target[tIndex]);
             tIndex++;
-            lastWasDeletion = 1;
             break;
         case 3:
             md->push_back(target[tIndex]);
             tIndex++;
             qIndex++;
-            lastWasDeletion = 0;
             break;
         default:
             fprintf(stderr, "[edlibMD_pushback] invalid alignment value!\n");
@@ -1590,7 +1587,6 @@ inline void edlibMD_pushfront(const char *query, const char *target, EdlibAlignR
 
     int qIndex = 0;
     int tIndex = 0;
-    int lastWasDeletion = 0; // flag
     char tableComplement[128] = {
     'N','N','N','N',   'N','N','N','N',   'N','N','N','N',   'N','N','N','N', 
     'N','N','N','N',   'N','N','N','N',   'N','N','N','N',   'N','N','N','N', 
@@ -1607,59 +1603,75 @@ inline void edlibMD_pushfront(const char *query, const char *target, EdlibAlignR
         switch(edResult.alignment[i])
         {
         case 0:
-            if(lastWasDeletion == 1) md->push_front('^');
             md->push_front('=');
-            tIndex++;
-        case 1:
             qIndex++;
-            lastWasDeletion = 0;
+            tIndex++;
+            break;
+        case 1:
+            md->push_front('-');
+            qIndex++;
             break;
         case 2:
             md->push_front(tableComplement[target[tIndex]]);
             tIndex++;
-            lastWasDeletion = 1;
             break;
         case 3:
-            if(lastWasDeletion == 1) md->push_front('^');
             md->push_front(tableComplement[target[tIndex]]);
             tIndex++;
             qIndex++;
-            lastWasDeletion = 0;
             break;
         default:
             fprintf(stderr, "[edlibMD_pushback] invalid alignment value!\n");
             exit(1);
         }
     }
-    //
-    if(lastWasDeletion == 1) md->push_front('^');
 }
 /**********************************************/
-inline std::string edlibMD_toString(std::deque<char> *md)
+inline std::string edlibMD_toString(std::deque<char> *md, std::deque<char> *cigar)
 {
     std::ostringstream sout;
     int num = 0;
+    char ch_md;
+    char ch_cigar;
+    char last_move = '='; // match(=), mis-match(X), insertion(I), deletion(D)
     for(int i = 0; i < md->size(); i++)
     {
-        if(md->at(i) != '=')
+        ch_md = md->at(i);
+        ch_cigar = cigar->at(i);
+        if(ch_md == '=')
         {
-            // if(num)
+            num++;
+            last_move = '=';
+        }
+        else if(ch_md == '-')
+        {
+            // nothing
+            last_move = 'I';
+        }
+        else if(ch_cigar == 'M')
+        {
+            // if(last_move != 'X')
             {
                 sout<< num;
                 num = 0;
             }
-            sout<< md->at(i);
+            sout<< ch_md;
+            last_move = 'X';
         }
-        else
+        else if(ch_cigar == 'D')
         {
-            num++;
+            if(last_move != 'D')
+            {
+                sout<< num;
+                num = 0;
+                sout<< '^';
+            }
+            sout<< ch_md;
+            last_move = 'D';
         }
     }
     // 
-    // if(num)
-    {
-        sout<< num;
-    }
+    sout<< num;
     return sout.str();
 }
 /**********************************************/
@@ -1908,7 +1920,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     // update score
                     // editScore_clip -= (readLen - readAlnStart_new);
                     tmpSam.cigar = edlibCigar_toString(edCigar);
-                    tmpSam.md = edlibMD_toString(edMD);
+                    tmpSam.md = edlibMD_toString(edMD, edCigar);
                     tmpSam.posEnd = refAlnStart_new;
                     tmpSam.qEnd = readAlnStart_new;
                     // tmpSam.alnScore = editScore + editScore_clip + readLen;
@@ -1953,7 +1965,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             edCigar->insert(edCigar->end(), readLen - readAlnEnd_new, 'I');
                             // editScore_clip -= (readLen - readAlnEnd_new);
                             tmpSam.cigar = edlibCigar_toString(edCigar);
-                            tmpSam.md = edlibMD_toString(edMD);
+                            tmpSam.md = edlibMD_toString(edMD, edCigar);
                             // tmpSam.alnScore = editScore + editScore_clip + readLen;
                             // tmpSam.alnScore = editScore;
                             tmpSam.nmCount = editScore;
@@ -2131,7 +2143,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     // fixCigar(alnCigar, edCigarStr);
     // tmpSam.cigar = edCigarStr;
     tmpSam.cigar = edlibCigar_toString(edCigar);
-    tmpSam.md = edlibMD_toString(edMD);
+    tmpSam.md = edlibMD_toString(edMD, edCigar);
     // map.cigar = (char*) malloc((alnCigar.size() + 1) * sizeof(char));
     // strcpy(map.cigar, alnCigar.c_str());
     // tmpSam.alnScore = editScore + editScore_clip + readLen;
