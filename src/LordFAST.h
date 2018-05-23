@@ -78,6 +78,7 @@ public:
     // char *qual;
     int32_t alnScore;
     int32_t nmCount;
+    std::string md;
     // int32_t clipCount;
 };
 
