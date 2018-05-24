@@ -1774,6 +1774,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     tmpSam.qStart = chain.seeds[0].qPos - qLen_ksw;
 
                     edCigar->insert(edCigar->begin(), readAlnLen - qLen_ksw, 'I');
+                    edMD->insert(edMD->begin(), readAlnLen - qLen_ksw, '-');
                     // update score
                     // editScore_clip -= (readAlnLen - qLen_ksw);
                 }
@@ -1804,6 +1805,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
         else // not enough sequence left on the chromosome to align => soft-clip
         {
             edCigar->insert(edCigar->begin(), readAlnLen, 'I');
+            edMD->insert(edMD->begin(), readAlnLen, '-');
             // update score
             // editScore_clip -= readAlnLen;
         }
@@ -1917,6 +1919,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                         edlibFreeAlignResult(edResult);
                     }
                     edCigar->insert(edCigar->end(), readLen - readAlnStart_new, 'I');
+                    edMD->insert(edMD->end(), readLen - readAlnStart_new, '-');
                     // update score
                     // editScore_clip -= (readLen - readAlnStart_new);
                     tmpSam.cigar = edlibCigar_toString(edCigar);
@@ -1956,6 +1959,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             tmpSam.posEnd = refAlnEnd_new;
                             tmpSam.qEnd = readAlnEnd_new;
                             edCigar->insert(edCigar->end(), readAlnStart_new, 'I');
+                            edMD->insert(edMD->end(), readAlnStart_new, '-');
                             // editScore_clip -= readAlnStart_new;
                             //
                             // edlibGetCigar(edResult_rev.alignment, edResult_rev.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
@@ -1963,6 +1967,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                             edlibMD_pushback(readAlnSeq_rev, refAlnSeq, edResult_rev, edMD);
                             editScore -= edResult_rev.editDistance;
                             edCigar->insert(edCigar->end(), readLen - readAlnEnd_new, 'I');
+                            edMD->insert(edMD->begin(), readLen - readAlnEnd_new, '-');
                             // editScore_clip -= (readLen - readAlnEnd_new);
                             tmpSam.cigar = edlibCigar_toString(edCigar);
                             tmpSam.md = edlibMD_toString(edMD, edCigar);
@@ -1997,6 +2002,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                         edlibFreeAlignResult(edResult);
                     }
                     edCigar->insert(edCigar->begin(), readAlnEnd_new, 'I');
+                    edMD->insert(edMD->begin(), readAlnEnd_new, '-');
                     // editScore_clip -= readAlnEnd_new;
                     tmpSam.flag = (isRev ? 16 : 0);
                     tmpSam.pos = refAlnEnd_new;
@@ -2026,13 +2032,13 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
             if(readAlnLen > 0)
             {
                 edCigar->insert(edCigar->end(), readAlnLen, 'I');
+                edMD->insert(edMD->end(), readAlnLen, '-');
                 // update the total score; edit distance => unit score
                 editScore -= readAlnLen;
             }
             else
             {
                 edCigar->insert(edCigar->end(), refAlnLen, 'D');
-                edMD->push_back('^');
                 bwt_str_pac2char(refAlnStart, refAlnLen, refAlnSeq);
                 for(j = 0; j < refAlnLen; j++)
                     edMD->push_back(refAlnSeq[j]);
@@ -2099,6 +2105,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     tmpSam.qEnd = readAlnStart + qLen_ksw;
 
                     edCigar->insert(edCigar->end(), readAlnLen - qLen_ksw, 'I');
+                    edMD->insert(edMD->end(), readAlnLen - qLen_ksw, '-');
                     // update score
                     // editScore_clip -= (readAlnLen - qLen_ksw);
                 }
@@ -2129,6 +2136,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
         else // not enough sequence left on the chromosome to align => soft-clip
         {
             edCigar->insert(edCigar->end(), readAlnLen, 'I');
+            edMD->insert(edMD->end(), readAlnLen, '-');
             // update score
             // editScore_clip -= readAlnLen;
         }
