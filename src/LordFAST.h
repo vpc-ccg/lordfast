@@ -63,23 +63,22 @@ typedef struct
 class Sam_t
 {
 public:
-    // char *qName;
-    uint16_t flag;
-    // char *rName;
-    uint32_t pos;
-    uint32_t posEnd;
+    char *rName;
+    // int32_t rLen;
+    uint32_t rStart;
+    // uint32_t rEnd;
     uint32_t qStart;
     uint32_t qEnd;
-    // uint8_t mapQ;
-    std::string cigar;
-    // char *cigar;
-    // int32_t tLen;
-    // char *seq;
-    // char *qual;
+    uint16_t flag;
+    int16_t mapQ;
+    uint32_t pos;
+    uint32_t posEnd;
     int32_t alnScore;
     int32_t nmCount;
+    // char *cigar;
+    std::string cigar;
     std::string md;
-    // int32_t clipCount;
+    std::string sa;
 };
 
 class SamList_t
@@ -97,7 +96,6 @@ public:
     char *seq_rev;
     char *qual;
     char *qual_rev;
-    // int mapNum;
     SamList_t *mappings;
 };
 

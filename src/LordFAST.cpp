@@ -317,6 +317,7 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
     double mapq = (x2 > 1 ? 2.1 : (_pf_maxWin - x1) * mapqPortion); // mapq 0 if there are multiple good alignments
     int32_t mapq_int;
     double lowEditBonus, betterQualBonus;
+    std::string tmpStr;
 
     for(i = 0; i < num; i++)
     {
@@ -337,14 +338,42 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                 {
                     bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
                     //
-                    sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" << chrName << "\t" << chrBeg + 1 
-                        << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
+                    map.mappings[i].samList[j].rName = chrName;
+                    map.mappings[i].samList[j].rStart = chrBeg;
+                    map.mappings[i].samList[j].mapQ = mapq_int;
+                    tmpStr = "";
+                    tmpStr += chrName; tmpStr += ",";
+                    tmpStr += type2str<uint32_t>(chrBeg + 1) + ",";
+                    tmpStr += (map.mappings[i].samList[j].flag & 16 ? "-," : "+,");
+                    tmpStr += map.mappings[i].samList[j].cigar + ",";
+                    tmpStr += type2str<int32_t>(mapq_int) + ",";
+                    tmpStr += type2str<int32_t>(abs(map.mappings[i].samList[j].nmCount)) + ";";
+                    map.mappings[i].samList[j].sa = tmpStr;
+                }
+
+                for(j = 0; j < map.mappings[i].samList.size(); j++)
+                {
+                    sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" 
+                        << map.mappings[i].samList[j].rName << "\t" << map.mappings[i].samList[j].rStart + 1 << "\t" 
+                        << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" 
+                        << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
                         << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
                         << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
                         << "XS:i:" << 0 << "\t"
                         << "NM:i:" << abs(map.mappings[i].samList[j].nmCount) << "\t"
-                        << "MD:Z:" << map.mappings[i].samList[j].md << "\n";
-                        // << "XS:i:" << 0 << "\t"
+                        << "MD:Z:" << map.mappings[i].samList[j].md;
+                        if(map.mappings[i].samList.size() > 1) // has supplementary
+                        {
+                            sout<< "\tSA:Z:";
+                            for(int z = 0; z < map.mappings[i].samList.size(); z++)
+                            {
+                                if(z != j)
+                                {
+                                    sout<< map.mappings[i].samList[z].sa;
+                                }
+                            }
+                        }
+                        sout<< "\n";
                         // << "TS:i:" << map.mappings[i].totalScore << "\t"
                         // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
                         // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
