@@ -7,7 +7,7 @@ lordFAST is specially designed for aligning reads from PacBio sequencing technol
 In order to install lordFAST, please download the source code from [https://github.com/vpc-ccg/lordfast](https://github.com/vpc-ccg/lordfast) or alternatively clone the repository by running the following command:
 
     $ git clone https://github.com/vpc-ccg/lordfast.git
-Now the code can be compiled easily by running "make" command line which builds the binary file "lordfast".
+Now the code can be compiled easily by running `make` command line which builds the binary file `lordfast`.
 
     $ cd lordfast
     $ make
@@ -20,12 +20,12 @@ Now the code can be compiled easily by running "make" command line which builds 
     lordfast --search FILE --seq FILE [OPTIONS]
 
 ### OPTIONS
-#### INDEXING OPTIONS
+#### Indexing options
 
     -I, --index STR
         Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
 
-#### MAPPING OPTIONS
+#### Mapping options
     -S, --search STR
         Path to the reference genome file in FASTA format. [required]
 
@@ -42,7 +42,7 @@ Now the code can be compiled easily by running "make" command line which builds 
         The number of cores for mapping the sequences.
         Pass 0 to use all the available cores in the system. [1]
 
-#### GENERAL OPTIONS
+#### Other options
     -h, --help
         Prints this help file.
 
@@ -60,8 +60,8 @@ Now the code can be compiled easily by running "make" command line which builds 
     $ ./lordfast --search refgen.fa --seq reads.fastq > map.sam
     $ ./lordfast --search refgen.fa --seq reads.fastq --threads 4 > map.sam
 
-## BUGS
-Please report the bugs through lordfast's issues page at [https://github.com/vpc-ccg/lordfast/issues](https://github.com/vpc-ccg/lordfast/issues).
+## Bugs
+Please report the bugs through lordFAST's issues page at [https://github.com/vpc-ccg/lordfast/issues](https://github.com/vpc-ccg/lordfast/issues).
 
 ## Contact
 Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
