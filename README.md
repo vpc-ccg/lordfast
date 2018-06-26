@@ -68,4 +68,4 @@ Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
 </br>
 Faraz Hach (fhach AT sfu DOT ca)
 
-Copyright (c) <2015-2020>, Simon Fraser University All rights reserved.
+Copyright (c) 2018, Simon Fraser University, All rights reserved.
