@@ -63,9 +63,12 @@ Now the code can be compiled easily by running "make" command line which builds 
 ## BUGS
 Please report the bugs through lordfast's issues page at [https://github.com/vpc-ccg/lordfast/issues](https://github.com/vpc-ccg/lordfast/issues).
 
-## Authors
+## Contact
 Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
-</br>
-Faraz Hach (fhach AT sfu DOT ca)
 
-Copyright (c) 2018, Simon Fraser University, All rights reserved.
+## Copyright and License
+This software is released under GPL license (Copyright (c) 2018, Simon Fraser University)
+- BWA (used for the BWT-based index) is developed by Heng Li and is licensed under GPL
+- Edlib (used for global alignment) is developed by Martin Sosic and is licensed under MIT
+- ksw (used for alignment extension) is licensed under MIT
+- clasp (can be used for chaining) is developed and copyrighted by Christian Otto
