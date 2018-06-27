@@ -89,11 +89,12 @@ extern unsigned int     THREAD_COUNT;
 extern double           MAX_MEMORY;
 extern int              THREAD_ID[255];
 
-extern unsigned char    WINDOW_SIZE;                    // WINDOW SIZE for indexing/searching
-extern unsigned int     SAMPLING_INTERVAL;              // segment length
+extern unsigned char    MIN_ANCHOR_LEN;                    // WINDOW SIZE for indexing/searching
+// extern unsigned int     SAMPLING_INTERVAL;              // segment length
 extern unsigned int     SAMPLING_COUNT;                 // seed count
+extern unsigned int     MAX_MAP;
 extern unsigned int     CHUNK_SIZE;
-extern unsigned int     CHUNK_OVERLAP;
+extern unsigned int     MIN_READ_LEN;
 extern unsigned short   SEQ_LENGTH;                     // Sequence(read) length
 extern uint16_t         QGRAM_WIN_SIZE;
 extern unsigned short   QUAL_LENGTH;

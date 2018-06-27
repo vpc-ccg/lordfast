@@ -304,7 +304,7 @@ void getLocs_extend_whole_step(char *qSeq, uint32_t qLen, uint32_t hash_count, S
   
     for(i=0; i<hash_count; i++)
     {
-        m = WINDOW_SIZE;
+        m = MIN_ANCHOR_LEN;
         // occ = bwt_count_exact(_fmd_index->bwt, qSeq + seed_pos_int, m, &sp, &ep);
         // fprintf(stderr, "%.*s %llu %llu %llu\n", m, qSeq + seed_pos_int, occ, sp, ep);
         occ = bwt_count_exact_cached(_fmd_index->bwt, qSeq + seed_pos_int, m, &sp, &ep);
@@ -390,7 +390,7 @@ int bwt_count_exact_backward(const bwt_t *bwt, const char *str, int ePos, bwtint
         k = k_tmp;
         l = l_tmp;
     }
-    if(ePos - i < WINDOW_SIZE) return 0; // no match >= WINDOW_SIZE
+    if(ePos - i < MIN_ANCHOR_LEN) return 0; // no match >= MIN_ANCHOR_LEN
     *sa_begin = k;
     *sa_end = l;
     *sPos = i + 1;
@@ -417,7 +417,7 @@ void getLocs_extend_whole_step2(char *qSeq, uint32_t qLen, uint32_t hash_count, 
     uint32_t numForward = 0;
     uint32_t numReverse = 0;
   
-    while(ePos >= WINDOW_SIZE - 1)
+    while(ePos >= MIN_ANCHOR_LEN - 1)
     {
         occ = bwt_count_exact_backward(_fmd_index->bwt, qSeq, ePos, &k, &l, &sPos);
         m = ePos - sPos + 1;
@@ -526,7 +526,7 @@ void getLocs_extend_whole_step3(char *qSeq, uint32_t qLen, uint32_t hash_count, 
     for(i = 0; i < hash_count; i++)
     {
         // if there are some locations, the number of locations is less than MAX_NUM_HITS
-        if(allIntv[seed_pos_int].m >= WINDOW_SIZE && allIntv[seed_pos_int].k != -1 && allIntv[seed_pos_int].l != -1 &&
+        if(allIntv[seed_pos_int].m >= MIN_ANCHOR_LEN && allIntv[seed_pos_int].k != -1 && allIntv[seed_pos_int].l != -1 &&
             allIntv[seed_pos_int].l - allIntv[seed_pos_int].k + 1 < MAX_NUM_HITS &&
             (seed_pos_int + allIntv[seed_pos_int].m) > last_pos)
         {

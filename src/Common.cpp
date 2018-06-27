@@ -224,7 +224,7 @@ int hashVal(char *seq)
     int i=0;
     int val=0, numericVal=0;
 
-    while(i<WINDOW_SIZE)
+    while(i < MIN_ANCHOR_LEN)
     {
         if (nHVal[seq[i]] == -1)
             return -1; 

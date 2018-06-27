@@ -124,11 +124,11 @@ int getNextRead() {
 /**********************************************/
 void hash(char *str, int count, int *hvs)
 {
-    uint64_t windowMask = 0xffffffffffffffff >> (sizeof(uint64_t)*8 - WINDOW_SIZE*2);
+    uint64_t windowMask = 0xffffffffffffffff >> (sizeof(uint64_t)*8 - MIN_ANCHOR_LEN*2);
     int stack=0, i, val, hv;
 //  int pos=0;
 
-    for (i=0; i < count+WINDOW_SIZE-1; i++)
+    for (i=0; i < count+MIN_ANCHOR_LEN-1; i++)
     {
         val = _r_alphIndex[str[i]];
         stack++;
@@ -145,7 +145,7 @@ void hash(char *str, int count, int *hvs)
         else
         {
             hv = ((hv << 2) | val)&windowMask;
-            if (stack == WINDOW_SIZE) {
+            if (stack == MIN_ANCHOR_LEN) {
                 if (hv == _r_pa || hv == _r_pc || hv == _r_pg || hv == _r_pt)
                     *(hvs++) = -1;
                 else
@@ -204,7 +204,7 @@ void* preProcessReads(void *idp)
         r = _r_seq + t;
         // fprintf(stdout,">\t%d\t%d\t%d\n", id, t,*r->length);
 
-        // intervals = (*r->length / SAMPLING_INTERVAL ) + ((*r->length % SAMPLING_INTERVAL >= SAMPLING_COUNT+WINDOW_SIZE-1)?1:0);
+        // intervals = (*r->length / SAMPLING_INTERVAL ) + ((*r->length % SAMPLING_INTERVAL >= SAMPLING_COUNT+MIN_ANCHOR_LEN-1)?1:0);
 
         // // forward hash
         // startPos = 0;
@@ -251,7 +251,7 @@ int initRead(char *fileName, int maxMem)
     char ch;
     int i, maxCnt=0;
 
-    for (i=0; i<WINDOW_SIZE; i++)
+    for (i=0; i<MIN_ANCHOR_LEN; i++)
     {
         _r_pc = (_r_pc << 2) | 1;
         _r_pg = (_r_pg << 2) | 2;
@@ -353,7 +353,7 @@ int readChunk(Read **seqList, unsigned int *seqListSize)
             qualLen = readLen;
         
         qgramLen = readLen; // TODO: readLen - QGRAM_WIN_SIZE
-        hvLen = ((readLen/SAMPLING_INTERVAL)+( (readLen % SAMPLING_INTERVAL >= SAMPLING_COUNT+WINDOW_SIZE-1) ?(1) :(0)) )*SAMPLING_COUNT;
+        // hvLen = ((readLen/SAMPLING_INTERVAL)+( (readLen % SAMPLING_INTERVAL >= SAMPLING_COUNT+MIN_ANCHOR_LEN-1) ?(1) :(0)) )*SAMPLING_COUNT;
 
         // size = 2*sizeof(uint16_t) + 2*(readLen + 1) + (qualLen + 1) + (nameLen+1) + 2*4*qgramLen + 2*sizeof(int32_t)*hvLen;  
         size = sizeof(uint32_t) + (readLen + 1) + (qualLen + 1) + (nameLen + 1) + sizeof(uint8_t);

@@ -1,4 +1,4 @@
-.TH lordFAST 1 "Last Updated: Sep 13, 2017" lordFAST "lordfast Manual"
+.TH lordFAST 1 "Last Updated: June 26, 2018" lordFAST "lordfast Manual"
 
 .SH NAME
 lordfast
@@ -28,63 +28,83 @@ lordfast --search FILE --seq FILE [OPTIONS]
 
 .SH OPTIONS
 .br
-.SS INDEXING OPTIONS
+.SS General options
 .TP
 .BI "-I, --index " STR
-Path to the reference genome file in FASTA format which is
-.br
-supposed to be indexed. [required]
-.br
-.SS MAPPING OPTIONS
+Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
 .TP
 .BI "-S, --search " STR
 Path to the reference genome file in FASTA format. [required]
 .TP
-.BI "-k, --minAnchorLen " INT
-Minimum required length of anchors to be considered. [14]
+.BI "-s, --seq " STR
+Path to the file containing read sequences in FASTA/FASTQ format. [required]
 .TP
 .BI "-o, --out " STR
 Write output to 
 .I STR
 file rather than standard output. [stdout]
 .TP
+.BI "-t, --threads " INT
+Use 
+.I INT
+number of CPU cores. Pass 0 to use all the available cores. [1]
+.br
+.SS Advanced options
+.TP
+.BI "-k, --minAnchorLen " INT
+Minimum required length of anchors to be considered. [14]
+.TP
+.BI "-n, --numMap " INT
+Perform alignment for at most 
+.I INT
+candidates. [10]
+.TP
+.BI "-l, --minReadLen " INT
+Do not try to map any read shorter than 
+.I INT
+bp and report them as unmapped. [1000]
+.TP
+.BI "-c, --anchorCount " INT
+Consider 
+.I INT
+anchoring positions on the long read. [1000]
+.TP
 .BI "-m, --maxRefHit " INT
 Ignore anchoring positions with more than 
 .I INT
 reference hits. [1000]
 .TP
-.BI "-t, --threads " INT
-The number of cores for mapping the sequences. Pass 0
-to use all the available cores in the system. [1]
+.BI "-A, --chainAlg " INT
+Chaining algorithm to use. Options are "dp-n2" and "clasp". [dp-n2]
 .br
-.SS GENERAL OPTIONS
+.SS Other options
 .TP
 .B -h, --help
-Prints this help file.
+Print this help file.
 .TP
 .B -v, --version
-Prints the version of software.
+Print the version of software.
 
 .SH EXAMPLES
 Indexing reference genome:
 .br
-$ ./lordfast --index refgen.fasta
+$ ./lordfast --index gen.fasta
 
 Mapping to the reference genome:
 .br
-$ ./lordfast --search refgen.fa --seq reads.fastq > map.sam
+$ ./lordfast --search gen.fa --seq reads.fastq > map.sam
 .br
-$ ./lordfast --search refgen.fa --seq reads.fastq --threads 4 > map.sam
+$ ./lordfast --search gen.fa --seq reads.fastq --threads 4 > map.sam
 
 .SH BUGS
 Please report the bugs through lordfast's issues page at 
 .br
 https://github.com/vpc-ccg/lordfast/issues
 
-.SH Author
+.SH CONTACT
 Ehsan Haghshenas (ehaghshe@sfu.ca)
-.br
-Faraz Hach (fhach@sfu.ca)
 
-.SH COPYRIGHT
-Copyright (c) <2015-2020>, Simon Fraser University All rights reserved.
+.SH COPYRIGHT AND LICENSE
+This software is released under GPL (v3.0) license.
+.br
+Copyright (c) 2018, Simon Fraser University, All rights reserved.

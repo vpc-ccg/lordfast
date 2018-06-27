@@ -204,7 +204,7 @@ int chain_seeds_clasp(Seed_t *fragment_list, uint32_t nFragment, Chain_t &bestCh
 inline double score_reward(int distR, int distT, int seedLen)
 {
     // return 7 * seedLen;
-    return chainReward * (double)WINDOW_SIZE;
+    return chainReward * (double)MIN_ANCHOR_LEN;
 }
 
 inline double score_penalty(int distR, int distT, int seedLen)

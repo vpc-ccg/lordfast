@@ -62,13 +62,12 @@ char                    outputMap[1000];
 char                    outputUnmap[1000];
 char                    opt_commandAll[2000];
 int                     opt_outputBufferSize = 2000000;
-// short                   maxHits = 0;
-// unsigned char           WINDOW_SIZE = 15;
-unsigned char           WINDOW_SIZE = 14;
-unsigned int            SAMPLING_INTERVAL = 2000;
+unsigned char           MIN_ANCHOR_LEN = 14;
+// unsigned int            SAMPLING_INTERVAL = 2000;
 unsigned int            SAMPLING_COUNT = 1000;
+unsigned int            MAX_MAP = 10;
 unsigned int            CHUNK_SIZE = 2000;
-unsigned int            CHUNK_OVERLAP = 1000;
+unsigned int            MIN_READ_LEN = 1000;
 unsigned int            MAX_NUM_HITS = 1000;
 unsigned int            CONTIG_SIZE;
 unsigned int            CONTIG_MAX_SIZE;
@@ -119,23 +118,23 @@ int parseCommandLine (int argc, char *argv[])
 
     static struct option longOptions[] = 
     {
-        {"progress",                no_argument,        &progressRep,       1},
-        {"noSamHeader",             no_argument,        &noSamHeader,       1},
-        {"tabOutput",               no_argument,        &tabOutput,         1},
-        {"affine",                  no_argument,        &affineMode,        1},
         {"index",                   required_argument,  0,                  'I'},
         {"search",                  required_argument,  0,                  'S'},
         {"seq",                     required_argument,  0,                  's'},
         {"out",                     required_argument,  0,                  'o'},
-        {"unMapped",                required_argument,  0,                  'u'},
         {"threads",                 required_argument,  0,                  't'},
         {"minAnchorLen",            required_argument,  0,                  'k'},
-        {"minReadLen",              required_argument,  0,                  'l'},
-        {"seedCount",               required_argument,  0,                  'c'},
-        {"err",                     required_argument,  0,                  'e'},
         {"maxRefHit",               required_argument,  0,                  'm'},
+        {"minReadLen",              required_argument,  0,                  'l'},
+        {"anchorCount",             required_argument,  0,                  'c'},
         {"numMap",                  required_argument,  0,                  'n'},
         {"chainAlg",                required_argument,  0,                  'A'},
+        {"progress",                no_argument,        &progressRep,       1},
+        {"noSamHeader",             no_argument,        &noSamHeader,       1},
+        {"tabOutput",               no_argument,        &tabOutput,         1},
+        {"affine",                  no_argument,        &affineMode,        1},
+        {"unMapped",                required_argument,  0,                  'u'},
+        {"err",                     required_argument,  0,                  'e'},
         {"chainReward",             required_argument,  0,                  'R'},
         {"chainPenalty",            required_argument,  0,                  'P'},
         {"gapPenalty",              required_argument,  0,                  'G'},
@@ -148,7 +147,7 @@ int parseCommandLine (int argc, char *argv[])
 
 
 
-    while ( (o = getopt_long ( argc, argv, "I:S:s:o:u:t:k:l:c:e:m:n:A:R:P:G:hv", longOptions, &index))!= -1 )
+    while ( (o = getopt_long ( argc, argv, "I:S:s:o:t:k:m:l:c:n:A:u:e:R:P:G:hv", longOptions, &index))!= -1 )
     {
         switch (o)
         {
@@ -173,33 +172,26 @@ int parseCommandLine (int argc, char *argv[])
                 // fprintf(stderr, "[CHECK] %s\n", mappingOutputPath);
                 // fprintf(stderr, "[CHECK] outputMap: %s\n", outputMap);
                 break;
-            case 'u':
-                strcpy(outputUnmap, optarg);
-                // fprintf(stderr, "[CHECK] outputUnmap %s\n", outputUnmap);
-                break;
             case 't':
                 THREAD_COUNT = atoi(optarg);
                 if (THREAD_COUNT == 0 || THREAD_COUNT > sysconf( _SC_NPROCESSORS_ONLN ))
                     THREAD_COUNT = sysconf( _SC_NPROCESSORS_ONLN );
                 break;
             case 'k':
-                WINDOW_SIZE = atoi(optarg);
-                break;
-            case 'l':
-                CHUNK_OVERLAP = atoi(optarg);
-                break;
-            case 'c':
-                SAMPLING_COUNT = atoi(optarg);
-                break;
-            case 'e':
-                errThreshold = atoi(optarg);
+                MIN_ANCHOR_LEN = atoi(optarg);
                 break;
             case 'm':
                 MAX_NUM_HITS = atoi(optarg);
                 break;
-            // case 'n':
-            //  maxHits = atoi(optarg);
-            //  break;
+            case 'l':
+                MIN_READ_LEN = atoi(optarg);
+                break;
+            case 'c':
+                SAMPLING_COUNT = atoi(optarg);
+                break;
+            case 'n':
+                MAX_MAP = atoi(optarg);
+                break;
             case 'A':
                 optarg_str = optarg;
                 if(optarg_str == "clasp")
@@ -224,6 +216,13 @@ int parseCommandLine (int argc, char *argv[])
                     // chainAlg = CHAIN_ALG_CLASP;
                     chainAlg = CHAIN_ALG_DPN2;
                 }
+                break;
+            case 'u':
+                strcpy(outputUnmap, optarg);
+                // fprintf(stderr, "[CHECK] outputUnmap %s\n", outputUnmap);
+                break;
+            case 'e':
+                errThreshold = atoi(optarg);
                 break;
             case 'R':
                 chainReward = atof(optarg);
@@ -275,9 +274,9 @@ int parseCommandLine (int argc, char *argv[])
         return 1;
     }
 
-    if (WINDOW_SIZE > 20 || WINDOW_SIZE < 10)
+    if (MIN_ANCHOR_LEN > 20 || MIN_ANCHOR_LEN < 10)
     {
-        fprintf(stderr, "[parseCommandLine] ERROR: Window size should be in [10..15]\n");
+        fprintf(stderr, "[parseCommandLine] ERROR: mininum anchor length should be in [10..20]\n");
         return 1;
     }
 
