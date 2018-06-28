@@ -1,3 +1,10 @@
+/*
+ * clasp is written by Christian Otto, Bioinformatics, University of Leipzig
+ * https://www.bioinf.uni-leipzig.de/Software/clasp/
+ *
+ * Dynamic programming chaining is written by Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
