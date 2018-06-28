@@ -1,4 +1,4 @@
-# **lordFAST: sensitive and ultra-Fast Alignment Search Tool for LOng noisy Read sequencing Data**
+# **lordFAST: sensitive and Fast Alignment Search Tool for LOng noisy Read sequencing Data**
 
 lordFAST is a sensitive tool for mapping long reads with high errorrates.
 lordFAST is specially designed for aligning reads from PacBio sequencing technology but provides the  user  the ability to change alignment parameters depending on the reads and application.
@@ -67,7 +67,8 @@ Please report the bugs through lordFAST's issues page at [https://github.com/vpc
 Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
 
 ## Copyright and License
-This software is released under GPL license (Copyright (c) 2018, Simon Fraser University)
+This software is released under GNU General Public License (v3.0)\
+Copyright (c) 2018 Simon Fraser University
 - BWA (used for the BWT-based index) is developed by Heng Li and is licensed under GPL
 - Edlib (used for global alignment) is developed by Martin Sosic and is licensed under MIT
 - ksw (used for alignment extension) is licensed under MIT
