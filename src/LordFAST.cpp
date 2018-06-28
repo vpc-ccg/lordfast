@@ -484,7 +484,7 @@ void* mapSeq(void *idp)
             continue;
         }
 
-        reverseComplete(read->seq, seq_rev, *read->length);
+        reverseComplement(read->seq, seq_rev, *read->length);
         reverse(read->qual, qual_rev, qualLen);
         _pf_topMappings[id].seq_rev  = seq_rev;
         _pf_topMappings[id].qual_rev = qual_rev;
@@ -1787,11 +1787,11 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
     {
         if((int64_t)chain.seeds[0].tPos - refAlnLen >= (int64_t)chrBeg)
         {
-            reverseComplete(query, readAlnSeq, readAlnLen);
+            reverseComplement(query, readAlnSeq, readAlnLen);
 
             refAlnStart = chain.seeds[0].tPos - refAlnLen;
             bwt_str_pac2char(refAlnStart, refAlnLen, refAlnSeq);
-            reverseComplete(refAlnSeq, refAlnSeq_rev, refAlnLen);
+            reverseComplement(refAlnSeq, refAlnSeq_rev, refAlnLen);
 
             edResult = edlibAlign(readAlnSeq, readAlnLen, refAlnSeq_rev, refAlnLen, edlibNewAlignConfig(-1, EDLIB_MODE_SHW, EDLIB_TASK_PATH));
 
@@ -1998,7 +1998,7 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     {
                         bwt_str_pac2char(refAlnStart_new, refAlnLen_new, refAlnSeq);
                         edResult = edlibAlign(query+readAlnStart_new, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
-                        reverseComplete(query+readAlnStart_new, readAlnSeq_rev, readAlnLen_new);
+                        reverseComplement(query+readAlnStart_new, readAlnSeq_rev, readAlnLen_new);
                         edResult_rev = edlibAlign(readAlnSeq_rev, readAlnLen_new, refAlnSeq, refAlnLen_new, edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
                         if((1 - ((double)edResult_rev.editDistance / readAlnLen_new)) > (1 - ((double)edResult.editDistance / readAlnLen_new))
                             && (1 - ((double)edResult_rev.editDistance / readAlnLen_new)) > _pf_reverseSim)
@@ -2042,8 +2042,8 @@ void alignChain_edlib(Chain_t &chain, char *query, int32_t readLen, int isRev, S
                     ////////////////////// make the second part of the split alignment
                     if(readAlnEnd_new < readAlnEnd || refAlnEnd_new < refAlnEnd)
                     {
-                        reverseComplete(query+readAlnStart, readAlnSeq, readAlnLen);
-                        reverseComplete(refAlnSeq, refAlnSeq_rev, refAlnLen);
+                        reverseComplement(query+readAlnStart, readAlnSeq, readAlnLen);
+                        reverseComplement(refAlnSeq, refAlnSeq_rev, refAlnLen);
                         edResult = edlibAlign(readAlnSeq, (readAlnEnd - readAlnEnd_new), refAlnSeq_rev, (refAlnEnd - refAlnEnd_new), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH));
                         // edlibGetCigarReverse(edResult.alignment, edResult.alignmentLength, EDLIB_CIGAR_STANDARD, edCigar);
                         edlibCigar_pushfront(edResult, edCigar);

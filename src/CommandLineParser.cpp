@@ -229,6 +229,6 @@ int parseCommandLine (int argc, char *argv[])
         strcat(opt_commandAll, " ");
     }
 
-    initCommon();
+    // initCommon();
     return 0;
 }

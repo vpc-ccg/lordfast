@@ -91,12 +91,6 @@ extern unsigned int     SAMPLING_COUNT;     // number of anchoring positions
 extern unsigned int     MAX_MAP;
 extern unsigned int     MIN_READ_LEN;
 extern unsigned int     MAX_REF_HITS;
-// extern unsigned short   SEQ_LENGTH;         // Sequence(read) length
-// extern uint16_t         QGRAM_WIN_SIZE;
-// extern unsigned short   QUAL_LENGTH;
-// extern unsigned short   CMP_SEQ_LENGTH;
-// extern unsigned short   DISCORDANT_CUT_OFF;
-// extern int              SNP_QUAL_THRESHOLD;
 
 #pragma pack(push, 1)
 typedef struct
@@ -117,23 +111,23 @@ typedef struct
     char alt;
 } SNPLoc;
 
-FILE*   fileOpen(char *fileName, const char *mode);
+// FILE*   fileOpen(char *fileName, const char *mode);
 gzFile  fileOpenGZ(char *fileName, const char *mode);
 double  getTime(void);
-void    reverseComplete (char *seq, char *rcSeq , int length);
-char    reverseCompleteChar(char);
+void    reverseComplement(char *seq, char *rcSeq , int length);
+// char    reverseCompleteChar(char);
 void*   getMem(size_t size);
 void    freeMem(void * ptr, size_t size);
 double  getMemUsage();
 void    reverse (char *seq, char *rcSeq , int length);
-void    stripPath(char *full, char *path, char *fileName);
-void    compressSequence(char *seq, int seqLen, CompressedSeq *cseq);
-void    decompressSequence(CompressedSeq *cseq, int seqLen, char *seq);
-int     calculateCompressedLen(int normalLen);
-int     hashVal(char *seq);
-int     checkSumVal(char *seq);
-void    initCommon();
-void    reverseInPlace(char *dest, char *src, int len);
+// void    stripPath(char *full, char *path, char *fileName);
+// void    compressSequence(char *seq, int seqLen, CompressedSeq *cseq);
+// void    decompressSequence(CompressedSeq *cseq, int seqLen, char *seq);
+// int     calculateCompressedLen(int normalLen);
+// int     hashVal(char *seq);
+// int     checkSumVal(char *seq);
+// void    initCommon();
+// void    reverseInPlace(char *dest, char *src, int len);
 
 template <typename T>
 T str2type(std::string str)
