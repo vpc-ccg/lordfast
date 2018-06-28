@@ -30,16 +30,16 @@
 #include "Reads.h"
 
 pthread_t       *_r_threads;
-pthread_mutex_t _r_readIdLock;
-FILE            *_r_fp;
+// pthread_mutex_t _r_readIdLock;
+// FILE            *_r_fp;
 // FILE            *_r_umfp;
 gzFile          _r_gzfp;
 
 Read            *_r_seq;
 uint32_t        _r_seqCnt;
-uint32_t        _r_seqPos;
+// uint32_t        _r_seqPos;
 uint32_t        _r_maxSeqCnt = 1000000;
-char            *_r_alphIndex = NULL;
+// char            *_r_alphIndex = NULL;
 char            *_r_buf;
 uint32_t        *_r_buf_size;
 uint32_t        *_r_buf_pos;
@@ -47,12 +47,12 @@ uint8_t         _r_fastq;
 uint8_t         _r_firstIteration = 1;
 uint64_t        _r_maxReadMemUsage;
 uint64_t        _r_readMemUsage = 0;
-uint32_t        _r_pa=0, _r_pc=0, _r_pg=0, _r_pt=0;
+// uint32_t        _r_pa=0, _r_pc=0, _r_pg=0, _r_pt=0;
 // uint16_t        _r_samplingInterval = 500;
 // uint16_t        _r_samplingCount = 250;
 
 /**********************************************/
-void (*readBuffer)();
+// void (*readBuffer)();
 /**********************************************/
 void readBufferGZ()
 {
@@ -60,11 +60,11 @@ void readBufferGZ()
     (*_r_buf_pos) = 0;
 }
 /**********************************************/
-void readBufferTXT()
-{
-    (*_r_buf_size) = fread(_r_buf, 1, 10000000, _r_fp);
-    (*_r_buf_pos) = 0;
-}
+// void readBufferTXT()
+// {
+//     (*_r_buf_size) = fread(_r_buf, 1, 10000000, _r_fp);
+//     (*_r_buf_pos) = 0;
+// }
 /**********************************************/
 int readSeq(char *seq)
 {
@@ -75,7 +75,7 @@ int readSeq(char *seq)
     {
         if (*_r_buf_pos ==*_r_buf_size)
         {
-            readBuffer();
+            readBufferGZ();
             if (*_r_buf_size == 0)
                 return 0;
         }
@@ -99,51 +99,51 @@ int readSeq(char *seq)
     }
 }
 /**********************************************/
-int getNextRead() {
-    int x;
-    pthread_mutex_lock(&_r_readIdLock);
-        x = _r_seqPos;
-        _r_seqPos++;
-    pthread_mutex_unlock(&_r_readIdLock);
-    return x;
-}
+// int getNextRead() {
+//     int x;
+//     pthread_mutex_lock(&_r_readIdLock);
+//         x = _r_seqPos;
+//         _r_seqPos++;
+//     pthread_mutex_unlock(&_r_readIdLock);
+//     return x;
+// }
 /**********************************************/
-void hash(char *str, int count, int *hvs)
-{
-    uint64_t windowMask = 0xffffffffffffffff >> (sizeof(uint64_t)*8 - MIN_ANCHOR_LEN*2);
-    int stack=0, i, val, hv;
-//  int pos=0;
+// void hash(char *str, int count, int *hvs)
+// {
+//     uint64_t windowMask = 0xffffffffffffffff >> (sizeof(uint64_t)*8 - MIN_ANCHOR_LEN*2);
+//     int stack=0, i, val, hv;
+// //  int pos=0;
 
-    for (i=0; i < count+MIN_ANCHOR_LEN-1; i++)
-    {
-        val = _r_alphIndex[str[i]];
-        stack++;
+//     for (i=0; i < count+MIN_ANCHOR_LEN-1; i++)
+//     {
+//         val = _r_alphIndex[str[i]];
+//         stack++;
 
-        if (val == 4) 
-        {
-            hv = 0;
-            while (stack>0) {
-                *(hvs++)=-1;
-                stack--;
-//              fprintf(stdout, "%3d => %c %3d %8llx | %d %6llx\n", i, str[i], stack, hv, pos++, *(hvs-1));
-            }
-        }
-        else
-        {
-            hv = ((hv << 2) | val)&windowMask;
-            if (stack == MIN_ANCHOR_LEN) {
-                if (hv == _r_pa || hv == _r_pc || hv == _r_pg || hv == _r_pt)
-                    *(hvs++) = -1;
-                else
-                    *(hvs++) = hv;
-                stack --;
-//              fprintf(stdout, "%3d => %c %3d %8llx | %d %6llx\n", i, str[i], stack+1, hv, pos++, *(hvs-1));
-            }
-//          else 
-//              fprintf(stdout, "%3d => %c %3d %8llx\n", i, str[i], stack, hv);
-        }
-    }
-}
+//         if (val == 4) 
+//         {
+//             hv = 0;
+//             while (stack>0) {
+//                 *(hvs++)=-1;
+//                 stack--;
+// //              fprintf(stdout, "%3d => %c %3d %8llx | %d %6llx\n", i, str[i], stack, hv, pos++, *(hvs-1));
+//             }
+//         }
+//         else
+//         {
+//             hv = ((hv << 2) | val)&windowMask;
+//             if (stack == MIN_ANCHOR_LEN) {
+//                 if (hv == _r_pa || hv == _r_pc || hv == _r_pg || hv == _r_pt)
+//                     *(hvs++) = -1;
+//                 else
+//                     *(hvs++) = hv;
+//                 stack --;
+// //              fprintf(stdout, "%3d => %c %3d %8llx | %d %6llx\n", i, str[i], stack+1, hv, pos++, *(hvs-1));
+//             }
+// //          else 
+// //              fprintf(stdout, "%3d => %c %3d %8llx\n", i, str[i], stack, hv);
+//         }
+//     }
+// }
 /**********************************************/
 // void qGramCount(char *str, int len, uint8_t* count)
 // {
@@ -176,59 +176,59 @@ void hash(char *str, int count, int *hvs)
 
 // }
 /**********************************************/
-void* preProcessReads(void *idp)
-{
-    int id = *(int*)idp;
-    Read *r;
-    int t, i, startPos, pos = 0, stack = 1, /*intervals,*/ k;
-    char val;
-    int32_t hv,sv;  
+// void* preProcessReads(void *idp)
+// {
+//     int id = *(int*)idp;
+//     Read *r;
+//     int t, i, startPos, pos = 0, stack = 1, /*intervals,*/ k;
+//     char val;
+//     int32_t hv,sv;  
 
-    while ((t=getNextRead())<_r_seqCnt){
+//     while ((t=getNextRead())<_r_seqCnt){
 
-        // Prcessing read t
-        r = _r_seq + t;
-        // fprintf(stdout,">\t%d\t%d\t%d\n", id, t,*r->length);
+//         // Prcessing read t
+//         r = _r_seq + t;
+//         // fprintf(stdout,">\t%d\t%d\t%d\n", id, t,*r->length);
 
-        // intervals = (*r->length / SAMPLING_INTERVAL ) + ((*r->length % SAMPLING_INTERVAL >= SAMPLING_COUNT+MIN_ANCHOR_LEN-1)?1:0);
+//         // intervals = (*r->length / SAMPLING_INTERVAL ) + ((*r->length % SAMPLING_INTERVAL >= SAMPLING_COUNT+MIN_ANCHOR_LEN-1)?1:0);
 
-        // // forward hash
-        // startPos = 0;
-        // for (k=0; k<intervals;k++)
-        // {
-        //  hash(r->seq+startPos, SAMPLING_COUNT, r->hv+k*SAMPLING_COUNT);
-        //  startPos += SAMPLING_INTERVAL;
-        // }
+//         // // forward hash
+//         // startPos = 0;
+//         // for (k=0; k<intervals;k++)
+//         // {
+//         //  hash(r->seq+startPos, SAMPLING_COUNT, r->hv+k*SAMPLING_COUNT);
+//         //  startPos += SAMPLING_INTERVAL;
+//         // }
         
-        // reverseComplete(r->seq, r->rseq, *r->length);
+//         // reverseComplete(r->seq, r->rseq, *r->length);
 
-        // //reverse hash
-        // startPos = 0;
-        // for (k=0; k<intervals;k++)
-        // {
-        //  hash(r->rseq+startPos, SAMPLING_COUNT, r->rhv+k*SAMPLING_COUNT);
-        //  startPos += SAMPLING_INTERVAL;
-        // }
+//         // //reverse hash
+//         // startPos = 0;
+//         // for (k=0; k<intervals;k++)
+//         // {
+//         //  hash(r->rseq+startPos, SAMPLING_COUNT, r->rhv+k*SAMPLING_COUNT);
+//         //  startPos += SAMPLING_INTERVAL;
+//         // }
 
-        //1-gram count forward
-        // qGramCount (r->seq, *r->length, r->alphCnt);
+//         //1-gram count forward
+//         // qGramCount (r->seq, *r->length, r->alphCnt);
 
-        //1-gram count reverse
-        // qGramCount (r->rseq, *r->length, r->ralphCnt);
-    }
-}
+//         //1-gram count reverse
+//         // qGramCount (r->rseq, *r->length, r->ralphCnt);
+//     }
+// }
 /**********************************************/
-void preProcessReadsMT()
-{
-    _r_threads = (pthread_t *) getMem(sizeof(pthread_t)*THREAD_COUNT);
-    int i=0; 
-    for (i=0; i<THREAD_COUNT; i++)
-        pthread_create(_r_threads+i, NULL, preProcessReads, THREAD_ID+i);
+// void preProcessReadsMT()
+// {
+//     _r_threads = (pthread_t *) getMem(sizeof(pthread_t)*THREAD_COUNT);
+//     int i=0; 
+//     for (i=0; i<THREAD_COUNT; i++)
+//         pthread_create(_r_threads+i, NULL, preProcessReads, THREAD_ID+i);
     
-    for (i=0; i<THREAD_COUNT; i++)
-        pthread_join(_r_threads[i], NULL);
-    freeMem(_r_threads, sizeof(pthread_t)*THREAD_COUNT);
-}
+//     for (i=0; i<THREAD_COUNT; i++)
+//         pthread_join(_r_threads[i], NULL);
+//     freeMem(_r_threads, sizeof(pthread_t)*THREAD_COUNT);
+// }
 
 /**********************************************/
 int initRead(char *fileName, int maxMem)
@@ -237,13 +237,12 @@ int initRead(char *fileName, int maxMem)
     char ch;
     int i, maxCnt=0;
 
-    for (i=0; i<MIN_ANCHOR_LEN; i++)
-    {
-        _r_pc = (_r_pc << 2) | 1;
-        _r_pg = (_r_pg << 2) | 2;
-        _r_pt = (_r_pt << 2) | 3;
-    }
-
+    // for (i=0; i<MIN_ANCHOR_LEN; i++)
+    // {
+    //     _r_pc = (_r_pc << 2) | 1;
+    //     _r_pg = (_r_pg << 2) | 2;
+    //     _r_pt = (_r_pt << 2) | 3;
+    // }
 
     _r_maxReadMemUsage = maxMem;
 
@@ -269,10 +268,10 @@ int initRead(char *fileName, int maxMem)
         if (_r_gzfp == NULL)
             return 0;
 
-        readBuffer = &readBufferGZ;
+        // readBuffer = &readBufferGZ;
     // }
 
-    readBuffer();
+    readBufferGZ();
 
     if (_r_buf[0] == '>')
         _r_fastq = 0;
@@ -286,12 +285,12 @@ int initRead(char *fileName, int maxMem)
     //     _r_umfp = fopen(outputUnmap, "w");
     // }
 
-    _r_alphIndex = (char*) getMem(128);     // used in readChunk()
-    _r_alphIndex['A'] = 0;
-    _r_alphIndex['C'] = 1;
-    _r_alphIndex['G'] = 2;
-    _r_alphIndex['T'] = 3;
-    _r_alphIndex['N'] = 4;
+    // _r_alphIndex = (char*) getMem(128);     // used in readChunk()
+    // _r_alphIndex['A'] = 0;
+    // _r_alphIndex['C'] = 1;
+    // _r_alphIndex['G'] = 2;
+    // _r_alphIndex['T'] = 3;
+    // _r_alphIndex['N'] = 4;
 
     return 1;
 }
@@ -377,6 +376,7 @@ int readChunk(Read **seqList, unsigned int *seqListSize)
             strcpy(_r_seq[_r_seqCnt].qual, "*");
             *_r_seq[_r_seqCnt].isFq = 0;
         }
+        // fprintf(stderr, "name: %s\n seq: %s\nqual: %s\n\n", _r_seq[_r_seqCnt].name, _r_seq[_r_seqCnt].seq, _r_seq[_r_seqCnt].qual);
         _r_seqCnt++;
 
 
@@ -387,7 +387,7 @@ int readChunk(Read **seqList, unsigned int *seqListSize)
     *seqList = _r_seq;
     *seqListSize = _r_seqCnt;
 
-    _r_seqPos = 0;
+    // _r_seqPos = 0;
     if (_r_seqCnt > 0)
     {
         // preProcessReadsMT();
@@ -396,7 +396,7 @@ int readChunk(Read **seqList, unsigned int *seqListSize)
     }
     else if (_r_firstIteration)
     {
-        fprintf(stderr, "[readChunk] ERROR: No reads for mapping\n");
+        fprintf(stderr, "[WARNING] (readChunk) no reads for mapping\n");
     }
 
     if (_r_seqCnt < _r_maxSeqCnt)       // reached end of file
@@ -445,7 +445,7 @@ void finalizeReads()
     // else
         gzclose(_r_gzfp);
     freeMem(_r_seq, sizeof(Read)*_r_maxSeqCnt);
-    freeMem(_r_alphIndex, 128);
+    // freeMem(_r_alphIndex, 128);
 
     freeMem(_r_buf, 10000000);
     freeMem(_r_buf_pos, sizeof(int));
@@ -458,5 +458,5 @@ void finalizeReads()
 }
 
 /**********************************************/
-void getSamplingLocsInfo(int **samplingLocs, int **samplingLocsSeg, int **samplingLocsOffset, int **samplingLocsLen, int **samplingLocsLenFull, int *samplingLocsSize) {}
-void getReadIndex(ReadIndexTable ***rIndex, int **rIndexSize) {}
+// void getSamplingLocsInfo(int **samplingLocs, int **samplingLocsSeg, int **samplingLocsOffset, int **samplingLocsLen, int **samplingLocsLenFull, int *samplingLocsSize) {}
+// void getReadIndex(ReadIndexTable ***rIndex, int **rIndexSize) {}

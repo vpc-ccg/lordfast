@@ -106,7 +106,7 @@ int parseCommandLine (int argc, char *argv[])
         switch (ch)
         {
             case 0:
-                fprintf(stderr, "[NOTE] option is set: %s\n", longOptions[index].name);
+                fprintf(stderr, "[NOTE] option %s is set\n", longOptions[index].name);
                 break;
             case 'I':
                 indexingMode = 1;
@@ -153,7 +153,7 @@ int parseCommandLine (int argc, char *argv[])
                 }
                 else
                 {
-                    fprintf(stderr, "[WARNING] unknown argument for -A/--chainAlg. Using dynamic programming (dp-n2)!\n");
+                    fprintf(stderr, "[WARNING] (parseCommandLine) unknown argument for -A/--chainAlg. Using dynamic programming (dp-n2)!\n");
                     chainAlg = CHAIN_ALG_DPN2;
                 }
                 break;
@@ -182,13 +182,13 @@ int parseCommandLine (int argc, char *argv[])
 
     if (indexingMode + searchingMode != 1)
     {
-        fprintf(stderr, "[parseCommandLine] ERROR: Indexing / Searching mode should be selected\n");
+        fprintf(stderr, "[ERROR] (parseCommandLine) indexing / searching mode should be selected\n");
         return 1;
     }
 
     if (MIN_ANCHOR_LEN > 20 || MIN_ANCHOR_LEN < 10)
     {
-        fprintf(stderr, "[parseCommandLine] ERROR: mininum anchor length should be in [10..20]\n");
+        fprintf(stderr, "[ERROR] (parseCommandLine) mininum anchor length should be in [10..20]\n");
         return 1;
     }
 
@@ -196,7 +196,7 @@ int parseCommandLine (int argc, char *argv[])
     {
         if (refFile == NULL)
         {
-            fprintf(stderr, "[parseCommandLine] ERROR: Reference(s) should be indicated for indexing\n");
+            fprintf(stderr, "[ERROR] (parseCommandLine) reference file should be indicated for indexing\n");
             return 1;
         }
     }
@@ -205,13 +205,13 @@ int parseCommandLine (int argc, char *argv[])
     {
         if (refFile == NULL)
         {
-            fprintf(stderr, "[parseCommandLine] ERROR: Index File(s) should be indiciated for searching\n");
+            fprintf(stderr, "[ERROR] (parseCommandLine) reference file should be indiciated for searching\n");
             return 1;
         }
 
         if (refFile == NULL)
         {
-            fprintf(stderr, "[parseCommandLine] ERROR: Please indicate a sequence file for searching.\n");
+            fprintf(stderr, "[ERROR] (parseCommandLine) please indicate a sequence file for searching.\n");
             return 1;
         }
     }
