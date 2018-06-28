@@ -284,10 +284,10 @@ int initRead(char *fileName, int maxMem)
 
     _r_seq = (Read*) getMem(sizeof(Read)*_r_maxSeqCnt);
 
-    if (!nohitDisabled)
-    {
-        _r_umfp = fopen(outputUnmap, "w");
-    }
+    // if (!nohitDisabled)
+    // {
+    //     _r_umfp = fopen(outputUnmap, "w");
+    // }
 
     _r_alphIndex = (char*) getMem(128);     // used in readChunk()
     _r_alphIndex['A'] = 0;

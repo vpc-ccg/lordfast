@@ -45,7 +45,7 @@ char                    *seqFile;
 char                    fileName[3][1000];
 char                    outputMap[1000];
 // char                    mappingOutputPath[1000];
-char                    outputUnmap[1000];
+// char                    outputUnmap[1000];
 char                    opt_commandAll[2000];
 int                     opt_outputBufferSize = 2000000;
 unsigned char           MIN_ANCHOR_LEN = 14;
@@ -119,8 +119,8 @@ int parseCommandLine (int argc, char *argv[])
         {"noSamHeader",             no_argument,        &noSamHeader,       1},
         {"tabOutput",               no_argument,        &tabOutput,         1},
         {"affine",                  no_argument,        &affineMode,        1},
-        {"unMapped",                required_argument,  0,                  'u'},
-        {"err",                     required_argument,  0,                  'e'},
+        // {"unMapped",                required_argument,  0,                  'u'},
+        // {"err",                     required_argument,  0,                  'e'},
         {"chainReward",             required_argument,  0,                  'R'},
         {"chainPenalty",            required_argument,  0,                  'P'},
         {"gapPenalty",              required_argument,  0,                  'G'},
@@ -133,7 +133,7 @@ int parseCommandLine (int argc, char *argv[])
 
 
 
-    while ( (o = getopt_long ( argc, argv, "I:S:s:o:t:k:m:l:c:n:A:u:e:R:P:G:hv", longOptions, &index))!= -1 )
+    while ( (o = getopt_long ( argc, argv, "I:S:s:o:t:k:m:l:c:n:A:R:P:G:hv", longOptions, &index))!= -1 )
     {
         switch (o)
         {
@@ -203,10 +203,10 @@ int parseCommandLine (int argc, char *argv[])
                     chainAlg = CHAIN_ALG_DPN2;
                 }
                 break;
-            case 'u':
-                strcpy(outputUnmap, optarg);
-                // fprintf(stderr, "[CHECK] outputUnmap %s\n", outputUnmap);
-                break;
+            // case 'u':
+            //     strcpy(outputUnmap, optarg);
+            //     // fprintf(stderr, "[CHECK] outputUnmap %s\n", outputUnmap);
+            //     break;
             // case 'e':
             //     errThreshold = atoi(optarg);
             //     break;

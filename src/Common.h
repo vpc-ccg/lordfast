@@ -103,7 +103,7 @@ extern char             *seqFile;
 extern char             *seqUnmapped;
 extern char             outputMap[1000];
 // extern char          mappingOutputPath[1000];
-extern char             outputUnmap[1000];
+// extern char             outputUnmap[1000];
 extern char             opt_commandAll[2000];
 extern int              opt_outputBufferSize;
 extern unsigned char    seqFastq;
