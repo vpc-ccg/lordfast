@@ -69,54 +69,34 @@ typedef uint16_t CheckSumType;
 
 enum chainAlg_t {CHAIN_ALG_CLASP, CHAIN_ALG_DPN2, CHAIN_ALG_LISN2, CHAIN_ALG_LISNLOGN};
 
-extern unsigned int     CONTIG_SIZE;
-extern unsigned int     CONTIG_MAX_SIZE;
-extern unsigned int     THREAD_COUNT;
-extern double           MAX_MEMORY;
-extern int              THREAD_ID[255];
-
-extern unsigned char    MIN_ANCHOR_LEN;                    // WINDOW SIZE for indexing/searching
-// extern unsigned int     SAMPLING_INTERVAL;              // segment length
-extern unsigned int     SAMPLING_COUNT;                 // seed count
-extern unsigned int     MAX_MAP;
-extern unsigned int     CHUNK_SIZE;
-extern unsigned int     MIN_READ_LEN;
-extern unsigned short   SEQ_LENGTH;                     // Sequence(read) length
-extern uint16_t         QGRAM_WIN_SIZE;
-extern unsigned short   QUAL_LENGTH;
-extern unsigned short   CMP_SEQ_LENGTH;
-extern unsigned short   DISCORDANT_CUT_OFF;
-extern int              SNP_QUAL_THRESHOLD;
-extern unsigned int     MAX_NUM_HITS;
-
 extern int              indexingMode;
 extern int              searchingMode;
-extern int              bestMappingMode;
 extern int              affineMode;
-extern int              seqCompressed;
-extern int              outCompressed;
-extern int              progressRep;
-extern int              nohitDisabled;
-extern int              tabOutput;
 extern int              noSamHeader;
 extern char             *seqFile;
-extern char             *seqUnmapped;
+extern char             *refFile;
 extern char             outputMap[1000];
-// extern char          mappingOutputPath[1000];
-// extern char             outputUnmap[1000];
 extern char             opt_commandAll[2000];
 extern int              opt_outputBufferSize;
-extern unsigned char    seqFastq;
-// extern int              errThreshold;
-extern short            maxHits;
-extern char             fileName[3][1000];
-extern int              fileCnt;
-extern long long        memUsage;
-extern char             *alphabet;
 extern chainAlg_t       chainAlg;
 extern double           chainReward;
 extern double           chainPenalty;
 extern double           gapPenalty;
+extern long long        memUsage;
+
+extern unsigned int     THREAD_COUNT;
+extern int              THREAD_ID[255];
+extern unsigned char    MIN_ANCHOR_LEN;     // minimum anchor length for searching
+extern unsigned int     SAMPLING_COUNT;     // number of anchoring positions
+extern unsigned int     MAX_MAP;
+extern unsigned int     MIN_READ_LEN;
+extern unsigned int     MAX_REF_HITS;
+// extern unsigned short   SEQ_LENGTH;         // Sequence(read) length
+// extern uint16_t         QGRAM_WIN_SIZE;
+// extern unsigned short   QUAL_LENGTH;
+// extern unsigned short   CMP_SEQ_LENGTH;
+// extern unsigned short   DISCORDANT_CUT_OFF;
+// extern int              SNP_QUAL_THRESHOLD;
 
 #pragma pack(push, 1)
 typedef struct

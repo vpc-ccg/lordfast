@@ -132,11 +132,11 @@ void initializeFAST()
     for(i=0; i<THREAD_COUNT; i++)
     {
         _pf_refWin_cnt[i]         = (WinCount_t*) getMem(_pf_refWin_num * sizeof(WinCount_t));
-        // _pf_seedsFR[i].list       = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
-        _pf_seedsForward[i].list  = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
-        _pf_seedsReverse[i].list  = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
+        // _pf_seedsFR[i].list       = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_REF_HITS * sizeof(Seed_t));
+        _pf_seedsForward[i].list  = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_REF_HITS * sizeof(Seed_t));
+        _pf_seedsReverse[i].list  = (Seed_t*)   getMem(SAMPLING_COUNT * MAX_REF_HITS * sizeof(Seed_t));
         _pf_seedsSelected[i].list = (Seed_t*)   getMem(SEQ_MAX_LENGTH * sizeof(Seed_t));
-//      _pf_bwtLocs_tmp[i]        = (uint32_t*) getMem(MAX_NUM_HITS * sizeof(uint32_t));
+//      _pf_bwtLocs_tmp[i]        = (uint32_t*) getMem(MAX_REF_HITS * sizeof(uint32_t));
         _pf_topWins[i].list       = (Win_t*)    getMem(_pf_maxWin * sizeof(Win_t));
         _pf_topChains[i].list     = (Chain_t*)  getMem(_pf_maxChain * sizeof(Chain_t));
         for(j=0; j<_pf_maxChain; j++)
@@ -200,7 +200,9 @@ void initializeFAST()
             exit(EXIT_FAILURE);
         }
     }
-    printSamHeader(_pf_outFile);
+
+    if(!noSamHeader)
+        printSamHeader(_pf_outFile);
 
     if(affineMode)
     {
@@ -227,11 +229,11 @@ void finalizeFAST()
         //     freeMem(_pf_topMappings[i][j].cigar, 2 * SEQ_MAX_LENGTH * sizeof(char));
         // }
         freeMem(_pf_refWin_cnt[i], _pf_refWin_num * sizeof(WinCount_t));
-        // freeMem(_pf_seedsFR[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
-        freeMem(_pf_seedsForward[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
-        freeMem(_pf_seedsReverse[i].list, SAMPLING_COUNT * MAX_NUM_HITS * sizeof(Seed_t));
+        // freeMem(_pf_seedsFR[i].list, SAMPLING_COUNT * MAX_REF_HITS * sizeof(Seed_t));
+        freeMem(_pf_seedsForward[i].list, SAMPLING_COUNT * MAX_REF_HITS * sizeof(Seed_t));
+        freeMem(_pf_seedsReverse[i].list, SAMPLING_COUNT * MAX_REF_HITS * sizeof(Seed_t));
         freeMem(_pf_seedsSelected[i].list, SEQ_MAX_LENGTH * sizeof(Seed_t));
-//      freeMem(_pf_bwtLocs_tmp[i], MAX_NUM_HITS * sizeof(uint32_t));
+//      freeMem(_pf_bwtLocs_tmp[i], MAX_REF_HITS * sizeof(uint32_t));
         freeMem(_pf_topWins[i].list, _pf_maxWin * sizeof(Win_t));
         freeMem(_pf_topChains[i].list, _pf_maxChain * sizeof(Chain_t));
         // freeMem(_pf_topMappings[i], _pf_maxWin * sizeof(Sam_t));

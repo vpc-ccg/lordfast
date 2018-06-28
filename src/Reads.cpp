@@ -32,7 +32,7 @@
 pthread_t       *_r_threads;
 pthread_mutex_t _r_readIdLock;
 FILE            *_r_fp;
-FILE            *_r_umfp;
+// FILE            *_r_umfp;
 gzFile          _r_gzfp;
 
 Read            *_r_seq;
@@ -145,36 +145,36 @@ void hash(char *str, int count, int *hvs)
     }
 }
 /**********************************************/
-void qGramCount(char *str, int len, uint8_t* count)
-{
-    int i;
-    char *head=str;
-    char *tail;
-    uint8_t* cur = count;
-    uint32_t* copy = (uint32_t*)(count+4);
+// void qGramCount(char *str, int len, uint8_t* count)
+// {
+//     int i;
+//     char *head=str;
+//     char *tail;
+//     uint8_t* cur = count;
+//     uint32_t* copy = (uint32_t*)(count+4);
     
-    cur[0]=cur[1]=cur[2]=cur[3]=0;
+//     cur[0]=cur[1]=cur[2]=cur[3]=0;
 
-    for (i=0; i<QGRAM_WIN_SIZE; i++)
-    {
-        cur[_r_alphIndex[str[i]]]++;
-    }
+//     for (i=0; i<QGRAM_WIN_SIZE; i++)
+//     {
+//         cur[_r_alphIndex[str[i]]]++;
+//     }
 
 
-    i=QGRAM_WIN_SIZE;
+//     i=QGRAM_WIN_SIZE;
 
-    head = str;
-    tail = str+QGRAM_WIN_SIZE;
-    while (i<len) 
-    {
-        *copy = *(copy-1);
-        cur = (uint8_t*)copy++;
-        cur[_r_alphIndex[*head++]]--;
-        cur[_r_alphIndex[*tail++]]++;
-        i++;
-    }
+//     head = str;
+//     tail = str+QGRAM_WIN_SIZE;
+//     while (i<len) 
+//     {
+//         *copy = *(copy-1);
+//         cur = (uint8_t*)copy++;
+//         cur[_r_alphIndex[*head++]]--;
+//         cur[_r_alphIndex[*tail++]]++;
+//         i++;
+//     }
 
-}
+// }
 /**********************************************/
 void* preProcessReads(void *idp)
 {
@@ -253,27 +253,24 @@ int initRead(char *fileName, int maxMem)
     *_r_buf_size = *_r_buf_pos = 0; 
 
 
-    if (!seqCompressed)
-    {
-        _r_fp = fileOpen( fileName, "r");
+    // if (!seqCompressed)
+    // {
+    //     _r_fp = fileOpen( fileName, "r");
 
-        if (_r_fp == NULL)
-            return 0;
+    //     if (_r_fp == NULL)
+    //         return 0;
 
-        readBuffer = &readBufferTXT;
-    }
-    else
-    {
-
+    //     readBuffer = &readBufferTXT;
+    // }
+    // else
+    // {
         _r_gzfp = fileOpenGZ (fileName, "r");
 
         if (_r_gzfp == NULL)
-        {
             return 0;
-        }
 
         readBuffer = &readBufferGZ;
-    }
+    // }
 
     readBuffer();
 
@@ -443,9 +440,9 @@ void releaseChunk()
 /**********************************************/
 void finalizeReads()
 {
-    if (!seqCompressed)
-        fclose(_r_fp);
-    else
+    // if (!seqCompressed)
+    //     fclose(_r_fp);
+    // else
         gzclose(_r_gzfp);
     freeMem(_r_seq, sizeof(Read)*_r_maxSeqCnt);
     freeMem(_r_alphIndex, 128);
@@ -454,10 +451,10 @@ void finalizeReads()
     freeMem(_r_buf_pos, sizeof(int));
     freeMem(_r_buf_size, sizeof(int));
 
-    if (!nohitDisabled)
-    {
-        fclose(_r_umfp);
-    }
+    // if (!nohitDisabled)
+    // {
+    //     fclose(_r_umfp);
+    // }
 }
 
 /**********************************************/

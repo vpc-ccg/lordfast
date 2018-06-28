@@ -336,8 +336,8 @@ void getLocs_extend_whole_step(char *qSeq, uint32_t qLen, uint32_t hash_count, S
             m++;
         }
 
-        // if there are some locations, the number of locations is less than MAX_NUM_HITS, and the seed is not contained
-        if(occ > 0 && occ < MAX_NUM_HITS && (seed_pos_int + m) > last_pos)
+        // if there are some locations, the number of locations is less than MAX_REF_HITS, and the seed is not contained
+        if(occ > 0 && occ < MAX_REF_HITS && (seed_pos_int + m) > last_pos)
         {
             // locate
             for(j = sp; j <= ep; j++)
@@ -440,8 +440,8 @@ void getLocs_extend_whole_step2(char *qSeq, uint32_t qLen, uint32_t hash_count, 
         occ = bwt_count_exact_backward(_fmd_index->bwt, qSeq, ePos, &k, &l, &sPos);
         m = ePos - sPos + 1;
 
-        // if there are some locations, the number of locations is less than MAX_NUM_HITS
-        if(occ > 0 && occ < MAX_NUM_HITS && sPos < last_pos)
+        // if there are some locations, the number of locations is less than MAX_REF_HITS
+        if(occ > 0 && occ < MAX_REF_HITS && sPos < last_pos)
         {
             // locate
             for(j = k; j <= l; j++)
@@ -543,9 +543,9 @@ void getLocs_extend_whole_step3(char *qSeq, uint32_t qLen, uint32_t hash_count, 
   
     for(i = 0; i < hash_count; i++)
     {
-        // if there are some locations, the number of locations is less than MAX_NUM_HITS
+        // if there are some locations, the number of locations is less than MAX_REF_HITS
         if(allIntv[seed_pos_int].m >= MIN_ANCHOR_LEN && allIntv[seed_pos_int].k != -1 && allIntv[seed_pos_int].l != -1 &&
-            allIntv[seed_pos_int].l - allIntv[seed_pos_int].k + 1 < MAX_NUM_HITS &&
+            allIntv[seed_pos_int].l - allIntv[seed_pos_int].k + 1 < MAX_REF_HITS &&
             (seed_pos_int + allIntv[seed_pos_int].m) > last_pos)
         {
             // locate

@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     // INDEXING
     if (indexingMode)
     {
-        if(bwt_index(fileName[0]))
+        if(bwt_index(refFile))
             return EXIT_FAILURE;
     }
     // SEARCHING
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
         // Loading BWT-FM index
         startTime = getTime();
-        if(bwt_load(fileName[0]))
+        if(bwt_load(refFile))
             return EXIT_FAILURE;
 
         // if (!initRead(seqFile, 500000000))

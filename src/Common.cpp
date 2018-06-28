@@ -30,12 +30,10 @@
 #include "Common.h"
 
 
-unsigned short          SEQ_LENGTH = 0;
-uint16_t                QGRAM_WIN_SIZE = 100;
-unsigned short          QUAL_LENGTH = 0;
-unsigned short          CMP_SEQ_LENGTH = 0;
-long long               memUsage = 0;
-// char                    *alphabet = "ACGTN";
+// unsigned short          SEQ_LENGTH = 0;
+// uint16_t                QGRAM_WIN_SIZE = 100;
+// unsigned short          QUAL_LENGTH = 0;
+// unsigned short          CMP_SEQ_LENGTH = 0;
 char                    nVal[128];
 char                    nRev[128];
 char                    nHVal[128];
