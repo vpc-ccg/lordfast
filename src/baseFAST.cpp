@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         initializeFAST();
 
         tmpTime = getTime();
-        while (readChunk(&seqList, &seqListSize) || seqListSize > 0)
+        while (readChunk(&seqList, &seqListSize) > 0)
         {
             initFASTChunk(seqList, seqListSize);
             totalLoadingTime += (getTime() - tmpTime);  // readAllReads + initLoadingHashTable
