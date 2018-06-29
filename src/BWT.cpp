@@ -122,7 +122,7 @@ int bwt_cache_gen(char *ref_path)
     fp = fopen(cache_path, "wb");
     if(fp == NULL)
     {
-        fprintf(stderr, "[BWT_CACHE_GEN] Could not open file: %s\n", cache_path);
+        fprintf(stderr, "[ERROR] (bwt_cache_gen) Could not open file: %s\n", cache_path);
         return 1;
     }
 
@@ -139,6 +139,9 @@ int bwt_cache_gen(char *ref_path)
 
 int bwt_index(char *ref_path)
 {
+    fprintf(stderr, "[NOTE] (bwt_index) building the index...\n");
+    double ct = getCpuTime();
+    double rt = getRealTime();
     bwa_verbose = 2;
     // reset optind
     optind = 1;
@@ -149,6 +152,7 @@ int bwt_index(char *ref_path)
         return 1;
     if(bwt_cache_gen(ref_path))
         return 1;
+    fprintf(stderr, "[NOTE] (bwt_index) index was built in %.2f seconds (%.2f CPU seconds)\n", getRealTime()-rt, getCpuTime()-ct);
     return 0;
 }
 
@@ -163,7 +167,7 @@ int bwt_cache_load(char *ref_path)
     fp = fopen(cache_path, "rb");
     if(fp == NULL)
     {
-        fprintf(stderr, "[BWT_CACHE_LOAD] Could not open file: %s\n", cache_path);
+        fprintf(stderr, "[ERROR] (bwt_cache_load) Could not open file: %s\n", cache_path);
         return 1;
     }
 
@@ -184,6 +188,9 @@ int bwt_cache_load(char *ref_path)
 
 int bwt_load(char *ref_path)
 {
+    fprintf(stderr, "[NOTE] (bwt_load) loading the index... \n");
+    double ct = getCpuTime();
+    double rt = getRealTime();
     bwa_verbose = 2;
     //
     char *idx_path;
@@ -195,8 +202,7 @@ int bwt_load(char *ref_path)
     strcat(idx_path, ".bwt");
     if((fp = fopen(idx_path, "rb")) == NULL)
     {
-        fprintf(stderr, "[BWT_LOAD] Could not locate index file: %s\n", idx_path);
-        fprintf(stderr, "[BWT_LOAD] Try to build the index...\n");
+        fprintf(stderr, "[WARNING] (bwt_load) could not locate index file: %s\n", idx_path);
         if(bwt_index(ref_path))
             return 1;
     }
@@ -231,6 +237,7 @@ int bwt_load(char *ref_path)
     // // end of sanity check
 
     free(idx_path);
+    fprintf(stderr, "[NOTE] (bwt_load) index was loaded in %.2f seconds (%.2f CPU seconds)\n", getRealTime()-rt, getCpuTime()-ct);
     return 0;
 }
 

@@ -63,7 +63,9 @@ int initRead(char *fileName, int maxMem)
 /**********************************************/
 int readChunk(Read **seqList, unsigned int *seqListSize)
 {
-    double startTime=getTime();
+    fprintf(stderr, "Reading input... ");
+    double ct = getCpuTime();
+    double rt = getRealTime();
     int  size;
 
     _r_seqCnt = 0;
@@ -112,12 +114,17 @@ int readChunk(Read **seqList, unsigned int *seqListSize)
 
     if (_r_seqCnt > 0)
     {
-        fprintf(stderr, "| *Reading Input* | %15.2f | XXXXXXXXXXXXXXX | %15.2f | XXXXXXXXXXXXXXX %15d |\n", (getTime()-startTime), getMemUsage(), _r_seqCnt );
+        fprintf(stderr, "loaded %u reads in %.2f seconds (%.2f CPU seconds)\n", _r_seqCnt, getRealTime()-rt, getCpuTime()-ct);
         _r_firstIteration = 0;
     }
-    else if (_r_firstIteration)
+    else
     {
-        fprintf(stderr, "[WARNING] (readChunk) no reads for mapping\n");
+        fprintf(stderr, "no more reads\n");
+    }
+
+    if (_r_seqCnt > 0 && _r_firstIteration)
+    {
+        fprintf(stderr, "[WARNING] (readChunk) there is no read to map\n");
     }
     
     return _r_seqCnt;

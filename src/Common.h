@@ -79,12 +79,13 @@ extern unsigned int     MIN_READ_LEN;
 extern unsigned int     MAX_REF_HITS;
 
 gzFile  fileOpenGZ(char *fileName, const char *mode);
-double  getTime(void);
 void    reverseComplement(char *seq, char *rcSeq , int length);
 void*   getMem(size_t size);
 void    freeMem(void * ptr, size_t size);
 double  getMemUsage();
 void    reverse (char *seq, char *rcSeq , int length);
+double  getCpuTime();
+double  getRealTime();
 
 template <typename T>
 T str2type(std::string str)

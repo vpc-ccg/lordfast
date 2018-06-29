@@ -196,7 +196,7 @@ void initializeFAST()
         _pf_outFile = fopen(outputMap, "w");
         if(_pf_outFile == NULL)
         {
-            fprintf(stderr, "[initializeFAST] ERROR: could not open file %s\n", outputMap);
+            fprintf(stderr, "[ERROR] (initializeFAST) could not open file %s\n", outputMap);
             exit(EXIT_FAILURE);
         }
     }

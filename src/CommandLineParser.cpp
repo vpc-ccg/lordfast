@@ -209,7 +209,7 @@ int parseCommandLine (int argc, char *argv[])
             return 1;
         }
 
-        if (refFile == NULL)
+        if (seqFile == NULL)
         {
             fprintf(stderr, "[ERROR] (parseCommandLine) please indicate a sequence file for searching.\n");
             return 1;

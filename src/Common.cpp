@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <zlib.h>
 #include <string.h>
 #include <math.h>
@@ -47,17 +48,10 @@ gzFile fileOpenGZ(char *fileName, const char *mode)
     gzFile gzfp = gzopen (fileName, mode);
     if (gzfp == Z_NULL)
     {
-        fprintf(stderr, "[Error] Cannot Open the file %s\n", fileName);
+        fprintf(stderr, "[ERROR] (fileOpenGZ) Cannot Open the file %s\n", fileName);
         exit(EXIT_FAILURE);
     }
     return gzfp;
-}
-/**********************************************/
-double getTime(void)
-{
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    return t.tv_sec+t.tv_usec/1000000.0;
 }
 /**********************************************/
 void reverseComplement(char *seq, char *rcSeq , int length)
@@ -93,7 +87,7 @@ double getMemUsage()
     return memUsage/1048576.0;
 }
 /**********************************************/
-void reverse (char *seq, char *rcSeq , int length)
+void reverse(char *seq, char *rcSeq , int length)
 {
     int i;
     seq += length-1;
@@ -102,4 +96,19 @@ void reverse (char *seq, char *rcSeq , int length)
         (*rcSeq++)=*(seq--);
     }
     *rcSeq='\0';
+}
+/**********************************************/
+double getCpuTime()
+{
+    struct rusage t;
+    getrusage(RUSAGE_SELF, &t);
+    return t.ru_utime.tv_sec + t.ru_utime.tv_usec / 1000000.0 + t.ru_stime.tv_sec + t.ru_stime.tv_usec / 1000000.0;
+}
+/**********************************************/
+double getRealTime()
+{
+    struct timeval t;
+    struct timezone tz;
+    gettimeofday(&t, &tz);
+    return t.tv_sec + t.tv_usec / 1000000.0;
 }

@@ -26,13 +26,8 @@
 #include <math.h>
 #include "Common.h"
 #include "CommandLineParser.h"
-// #include "Output.h"
 #include "BWT.h"
-// #include "PacFAST-BWT.h"
 #include "LordFAST.h"
-
-// unsigned char  seqFastq;
-// void     printStat();
 
 int main(int argc, char *argv[])
 {
@@ -48,23 +43,15 @@ int main(int argc, char *argv[])
     // SEARCHING
     else
     {
-        // queryTest();
         Read *seqList;
         unsigned int seqListSize;
-        int totalNumOfReads = 0;
-        double totalLoadingTime = 0;
-        double totalMappingTime = 0;
-        double startTime;
-        double loadingTime;
-        double mappingTime;
-        double lstartTime;
-        double tmpTime;
-        //  double maxMem=0;
-        //  int flag;
-        //  int chrIndex;
+        uint32_t totalNumOfReads = 0;
+        double startCpuTime = getCpuTime();
+        double startRealTime = getRealTime();
+        double ct;
+        double rt;
 
         // Loading BWT-FM index
-        startTime = getTime();
         if(bwt_load(refFile))
             return EXIT_FAILURE;
 
@@ -72,96 +59,26 @@ int main(int argc, char *argv[])
         if (!initRead(seqFile, 100000000))
             return EXIT_FAILURE;
 
-        totalLoadingTime += getTime()-startTime;
-
-        // // Preparing output
-        // initOutput(mappingOutput, outCompressed);
-
-        fprintf(stderr, "-----------------------------------------------------------------------------------------------------------\n");
-        fprintf(stderr, "| %15s | %15s | %15s | %15s | %15s %15s |\n","Genome Name","Loading Time", "Mapping Time", "Memory Usage(M)","Total Mappings","Mapped reads");
-        fprintf(stderr, "-----------------------------------------------------------------------------------------------------------\n");
-
-        mappingTime = 0;
-        loadingTime = 0;
-        //  flag = 1;
-
         initializeFAST();
 
-        tmpTime = getTime();
         while (readChunk(&seqList, &seqListSize) > 0)
         {
-            initFASTChunk(seqList, seqListSize);
-            totalLoadingTime += (getTime() - tmpTime);  // readAllReads + initLoadingHashTable
             totalNumOfReads += seqListSize;
+            initFASTChunk(seqList, seqListSize);
 
-            lstartTime = getTime();     
-            mapSeqMT();
-            mappingTime += getTime() - lstartTime;
-            totalMappingTime += mappingTime;
-
-            // finalizeFASTChunk();
-
-            // fprintf(stdout, "| %15s | %15.2f | %15.2f | %15.2f | %15lld %15lld |\n",
-            //     chrName, loadingTime, mappingTime, maxMem, mappingCnt , mappingCnt);
-            // fflush(stdout);
+            ct = getCpuTime();
+            rt = getRealTime();
+            fprintf(stderr, "\tmapping... ");
             
-        //    chrIndex = 0;
-        //    do
-        //    {
-        //         flag = loadHashTable ( &tmpTime );        // Reading a fragment
-        //         loadingTime += tmpTime;
+            mapSeqMT();
 
-        //         char *chrName_tmp = getRefGenomeName();
-        //         char *chrName = getMem(CONTIG_NAME_SIZE);
-        //         strcpy(chrName, chrName_tmp);
-
-        //         initFASTContig();
-        //         mapSeq(flag, chrIndex);
-
-        //         if (maxMem < getMemUsage())
-        //             maxMem = getMemUsage();
-
-        //         if (flag == 0 || flag == 2)
-        //         {
-        //             totalMappingTime += mappingTime;
-        //             totalLoadingTime += loadingTime;
-
-        //             loadingTime = 0;
-        //             mappingTime = 0;
-        //             maxMem = 0;
-        //             chrIndex++;
-        //         }
-        //         else if (progressRep)
-        //         {
-        //             fprintf(stdout, "| %15s | %15.2f | %15.2f | %15.2f | %15lld %15lld |\n",
-        //                 chrName, loadingTime, mappingTime, maxMem, mappingCnt , mappingCnt);
-        //             fflush(stdout);
-        //         }
-
-        //         freeMem(chrName, CONTIG_NAME_SIZE);
-        //    } while (flag);
+            fprintf(stderr, "done in %.2f seconds (%.2f CPU seconds)\n", getRealTime()-rt, getCpuTime()-ct);
 
             releaseChunk();
-            // tmpTime = getTime();
         }
-        totalLoadingTime += (getTime() - tmpTime);    // for the last readAllReads call
 
         finalizeFAST();
-        // // finalizeLoadingHashTable();
-        // finalizeReads();
-        // finalizeOutput();
-        // finalizeCommandParser();
-
-        //  fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
-
-        //  fprintf(stdout, "%19s%16.2f%18.2f\n\n", "Total:",totalLoadingTime, totalMappingTime);
-        //  fprintf(stdout, "%-30s%10.2f\n","Total Time:", totalMappingTime+totalLoadingTime);
-        //  fprintf(stdout, "%-30s%10d\n","Total No. of Reads:", totalNumOfReads);
-        //  fprintf(stdout, "%-30s%10lld\n","Total No. of Mappings:", mappingCnt);
-        //  // fprintf(stdout, "%-30s%10.0f\n","Avg No. of locations verified:", ceil((float)verificationCnt/totalNumOfReads));
-        //  if (memUsage > 0)
-        //     fprintf(stdout, "Memory Leak: %lld Bytes\n", memUsage);
-
+        fprintf(stderr, "[NOTE] processed %u reads in %.2f seconds (%.2f CPU seconds)\n", totalNumOfReads, getRealTime()-startRealTime, getCpuTime()-startCpuTime);
     }
     return 0;
 }
