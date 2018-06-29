@@ -1,6 +1,6 @@
 # **lordFAST: sensitive and Fast Alignment Search Tool for LOng noisy Read sequencing Data**
 
-lordFAST is a sensitive tool for mapping long reads with high errorrates.
+lordFAST is a sensitive tool for mapping long reads with high error rates.
 lordFAST is specially designed for aligning reads from PacBio sequencing technology but provides the  user  the ability to change alignment parameters depending on the reads and application.
 
 ## How to install?
