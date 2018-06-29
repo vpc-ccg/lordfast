@@ -13,9 +13,10 @@ CC          ?= gcc
 CXX         ?= g++
 
 SRCDIR      := src
-CLASPDIR    := $(SRCDIR)/clasp
-BWADIR      := $(SRCDIR)/bwa
-EDLIBDIR    := $(SRCDIR)/edlib
+LIBDIR      := lib
+CLASPDIR    := $(LIBDIR)/clasp
+BWADIR      := $(LIBDIR)/bwa
+EDLIBDIR    := $(LIBDIR)/edlib
 
 INCS        := -I$(CLASPDIR) -I$(BWADIR) -I$(EDLIBDIR)
 LIBS        := -lz -lm -lpthread
