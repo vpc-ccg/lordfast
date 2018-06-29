@@ -4,6 +4,10 @@ lordFAST is a sensitive tool for mapping long reads with high error rates.
 lordFAST is specially designed for aligning reads from PacBio sequencing technology but provides the  user  the ability to change alignment parameters depending on the reads and application.
 
 ## How to install?
+### Requirements
+- GCC ≥ 4.4.7
+- zlib
+
 In order to install lordFAST, please download the source code from [https://github.com/vpc-ccg/lordfast](https://github.com/vpc-ccg/lordfast) or alternatively clone the repository by running the following command:
 
     $ git clone https://github.com/vpc-ccg/lordfast.git
