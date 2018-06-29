@@ -28,10 +28,12 @@ lordfast --search FILE --seq FILE [OPTIONS]
 
 .SH OPTIONS
 .br
-.SS General options
+.SS Indexing options
 .TP
 .BI "-I, --index " STR
 Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
+.br
+.SS Mapping options
 .TP
 .BI "-S, --search " STR
 Path to the reference genome file in FASTA format. [required]
@@ -74,8 +76,11 @@ Ignore anchoring positions with more than
 .I INT
 reference hits. [1000]
 .TP
-.BI "-A, --chainAlg " INT
+.BI "-a, --chainAlg " INT
 Chaining algorithm to use. Options are "dp-n2" and "clasp". [dp-n2]
+.TP
+.BI "--noSamHeader "
+Do not print sam header in the output.
 .br
 .SS Other options
 .TP
@@ -86,9 +91,9 @@ Print this help file.
 Print the version of software.
 
 .SH EXAMPLES
-Indexing reference genome:
+Indexing the reference genome:
 .br
-$ ./lordfast --index gen.fasta
+$ ./lordfast --index gen.fa
 
 Mapping to the reference genome:
 .br
@@ -105,6 +110,6 @@ https://github.com/vpc-ccg/lordfast/issues
 Ehsan Haghshenas (ehaghshe@sfu.ca)
 
 .SH COPYRIGHT AND LICENSE
-This software is released under GPL (v3.0) license.
+This software is released under  GNU General Public License (v3.0)
 .br
-Copyright (c) 2018, Simon Fraser University, All rights reserved.
+Copyright (c) 2018 Simon Fraser University, All rights reserved.

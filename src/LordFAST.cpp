@@ -204,14 +204,14 @@ void initializeFAST()
     if(!noSamHeader)
         printSamHeader(_pf_outFile);
 
-    if(affineMode)
-    {
-        alignChain = &alignChain_ksw;
-    }
-    else
-    {
+    // if(affineMode)
+    // {
+    //     alignChain = &alignChain_ksw;
+    // }
+    // else
+    // {
         alignChain = &alignChain_edlib;
-    }
+    // }
 }
 /**********************************************/
 void finalizeFAST()

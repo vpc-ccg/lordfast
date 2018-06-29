@@ -31,7 +31,7 @@
 
 int                     indexingMode;
 int                     searchingMode;
-int                     affineMode = 0;
+// int                     affineMode = 0;
 int                     noSamHeader = 0;
 char                    *seqFile;
 char                    *refFile;
@@ -90,18 +90,18 @@ int parseCommandLine (int argc, char *argv[])
         {"minReadLen",              required_argument,  0,                  'l'},
         {"anchorCount",             required_argument,  0,                  'c'},
         {"numMap",                  required_argument,  0,                  'n'},
-        {"chainAlg",                required_argument,  0,                  'A'},
+        {"chainAlg",                required_argument,  0,                  'a'},
+        {"noSamHeader",             no_argument,        &noSamHeader,       1},
+        // {"affine",                  no_argument,        &affineMode,        1},
         {"chainReward",             required_argument,  0,                  'R'},
         {"chainPenalty",            required_argument,  0,                  'P'},
         {"gapPenalty",              required_argument,  0,                  'G'},
-        {"noSamHeader",             no_argument,        &noSamHeader,       1},
-        {"affine",                  no_argument,        &affineMode,        1},
         {"help",                    no_argument,        0,                  'h'},
         {"version",                 no_argument,        0,                  'v'},
         {0,0,0,0}
     };
 
-    while ( (ch = getopt_long ( argc, argv, "I:S:s:o:t:k:m:l:c:n:A:R:P:G:hv", longOptions, &index))!= -1 )
+    while ( (ch = getopt_long ( argc, argv, "I:S:s:o:t:k:m:l:c:n:a:R:P:G:hv", longOptions, &index))!= -1 )
     {
         switch (ch)
         {
@@ -142,7 +142,7 @@ int parseCommandLine (int argc, char *argv[])
             case 'n':
                 MAX_MAP = atoi(optarg);
                 break;
-            case 'A':
+            case 'a':
                 if(strcmp(optarg, "clasp") == 0)
                 {
                     chainAlg = CHAIN_ALG_CLASP;
