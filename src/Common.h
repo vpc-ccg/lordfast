@@ -23,10 +23,6 @@
 #ifndef __COMMON__
 #define __COMMON__
 
-#if SSE4==1 
-#define MRSFAST_SSE4
-#endif
-
 #include <stdio.h>
 #include <zlib.h>
 #include <stdint.h>
@@ -52,17 +48,7 @@
 #define LOG3(cmd) cmd
 #endif
 
-#define SEQ_MAX_LENGTH      50000       // Seq Max Length
-#define ALIGN_SEQ_MAX_LEN   75000
-#define CONTIG_OVERLAP      50400       // No. of characters overlapped between contings  --  equals 2100 blocks of length 21
-#define CMP_SEQ_MAX_LENGTH  10          // Compressed Seq Max Length
-#define CONTIG_NAME_SIZE    200         // Contig name max size
-// #define FILE_NAME_LENGTH    500         // Filename Max Length
-#define MAX_SNP_PER_CHR     6000000
-// #define SEED_MERGING_RANGE  (SAMPLING_COUNT+50)
-#define SEED_MERGING_RANGE  500
-#define MAX_QGRAM_DIS       30
-#define MIN_SUP_THRESHOLD   0.4
+#define SEQ_MAX_LENGTH      50000       // maximum sequence length
 
 typedef uint64_t CompressedSeq;
 typedef uint16_t CheckSumType;
@@ -92,42 +78,13 @@ extern unsigned int     MAX_MAP;
 extern unsigned int     MIN_READ_LEN;
 extern unsigned int     MAX_REF_HITS;
 
-#pragma pack(push, 1)
-typedef struct
-{
-    CheckSumType  checksum;
-    uint32_t info;              // ReadIndex => seqInfo | GenomeIndex ==> Loc
-} GeneralIndex;
-#pragma pack(pop)
-typedef struct
-{
-    int hv;
-    GeneralIndex *list;
-} ReadIndexTable;
-
-typedef struct
-{
-    int loc;
-    char alt;
-} SNPLoc;
-
-// FILE*   fileOpen(char *fileName, const char *mode);
 gzFile  fileOpenGZ(char *fileName, const char *mode);
 double  getTime(void);
 void    reverseComplement(char *seq, char *rcSeq , int length);
-// char    reverseCompleteChar(char);
 void*   getMem(size_t size);
 void    freeMem(void * ptr, size_t size);
 double  getMemUsage();
 void    reverse (char *seq, char *rcSeq , int length);
-// void    stripPath(char *full, char *path, char *fileName);
-// void    compressSequence(char *seq, int seqLen, CompressedSeq *cseq);
-// void    decompressSequence(CompressedSeq *cseq, int seqLen, char *seq);
-// int     calculateCompressedLen(int normalLen);
-// int     hashVal(char *seq);
-// int     checkSumVal(char *seq);
-// void    initCommon();
-// void    reverseInPlace(char *dest, char *src, int len);
 
 template <typename T>
 T str2type(std::string str)

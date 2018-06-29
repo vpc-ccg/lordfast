@@ -1,7 +1,4 @@
 /*
- * lordFAST: sensitive and Fast Alignment Search Tool for LOng noisy Read sequencing Data
- * Copyright (C) 2018 Simon Fraser University
-
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +14,8 @@
  */
 
 /*
- * Author: Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
+ * Taken from BWA copyrighted by Heng Li
+ * Modified by Ehsan Haghshenas (ehaghshe AT sfu DOT ca)
  */
 
 #include "BWT.h"

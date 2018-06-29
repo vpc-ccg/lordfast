@@ -23,7 +23,6 @@
 #ifndef __COMMAND_LINE_PARSER__
 #define __COMMAND_LINE_PARSER__
 
-int parseCommandLine (int argc, char *argv[]);
-// void finalizeCommandParser();
+int parseCommandLine(int argc, char *argv[]);
 
 #endif

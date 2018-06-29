@@ -29,7 +29,8 @@
 #include <pthread.h>
 #include "Common.h"
 
-char tableRev[128] = {
+pthread_mutex_t         _common_lock;
+char                    tableRev[128] = {
     'N','N','N','N',   'N','N','N','N',   'N','N','N','N',   'N','N','N','N', 
     'N','N','N','N',   'N','N','N','N',   'N','N','N','N',   'N','N','N','N', 
     'N','N','N','N',   'N','N','N','N',   'N','N','N','N',   'N','N','N','N', 
@@ -40,26 +41,6 @@ char tableRev[128] = {
     'N','N','N','N',   'a','N','N','N',   'N','N','N','N',   'N','N','N','N'
 };
 
-// char                    nVal[128];
-// char                    nRev[128];
-// char                    nHVal[128];
-// char                    _common_nRevVal[5];
-pthread_mutex_t         _common_lock;
-
-
-/**********************************************/
-// FILE *fileOpen(char *fileName, const char *mode)
-// {
-//     FILE *fp;
-//     fp = fopen (fileName, mode);
-//     if (fp == NULL)
-//     {
-//         fprintf(stdout, "Error: Cannot Open the file %s\n", fileName);
-//         fflush(stdout);
-//         exit(0);
-//     }
-//     return fp;
-// }
 /**********************************************/
 gzFile fileOpenGZ(char *fileName, const char *mode)
 {
@@ -78,16 +59,8 @@ double getTime(void)
     gettimeofday(&t, NULL);
     return t.tv_sec+t.tv_usec/1000000.0;
 }
-
 /**********************************************/
-// inline char reverseCompleteChar(char c)
-// char reverseCompleteChar(char c)
-// {
-//     return tableRev[c];
-// }
-/**********************************************/
-// inline void reverseComplete (char *seq, char *rcSeq , int length)        // TODO: efficiency check
-void reverseComplement(char *seq, char *rcSeq , int length)      // TODO: efficiency check
+void reverseComplement(char *seq, char *rcSeq , int length)
 {
     int i;
     seq+=length-1;
@@ -98,7 +71,7 @@ void reverseComplement(char *seq, char *rcSeq , int length)      // TODO: effici
     rcSeq[length]='\0';
 }
 /**********************************************/
-void* getMem(size_t size)          // TODO: if malloc is unsuccessfull, return an error message
+void* getMem(size_t size)
 {
     
     pthread_mutex_lock(&_common_lock);
@@ -120,7 +93,6 @@ double getMemUsage()
     return memUsage/1048576.0;
 }
 /**********************************************/
-// inline void reverse (char *seq, char *rcSeq , int length)
 void reverse (char *seq, char *rcSeq , int length)
 {
     int i;
@@ -131,131 +103,3 @@ void reverse (char *seq, char *rcSeq , int length)
     }
     *rcSeq='\0';
 }
-/**********************************************/
-// void stripPath(char *full, char *path, char *fileName)
-// {
-//     int i;
-//     int pos = -1;
-
-//     for (i=strlen(full)-1; i>=0; i--)
-//     {
-//         if (full[i]=='/')
-//         {
-//             pos = i;
-//             break;
-//         }
-
-//     }
-
-//     if (pos != -1)
-//     {
-//         sprintf(fileName, "%s%c", (full+pos+1), '\0');
-//         full[pos+1]='\0';
-//         sprintf(path,"%s%c", full, '\0');
-//     }
-//     else
-//     {
-//         sprintf(fileName, "%s%c", full, '\0');
-//         sprintf(path,"%c", '\0');
-//     }
-// }
-/**********************************************/
-// inline int calculateCompressedLen(int normalLen)
-// {
-//     return (normalLen / 21) + ((normalLen%21)?1:0);
-// }
-/**********************************************/
-// void compressSequence(char *seq, int seqLen, CompressedSeq *cseq)
-// {
-//     CompressedSeq val = 0;
-//     int i = 0, pos = 0;
-    
-//     *cseq = 0;
-//     while (pos < seqLen)
-//     {
-//         *cseq = ((*cseq) << 3) | nVal[seq[pos++]];
-
-//         if (++i == 21)
-//         {
-//             i = 0;
-//             cseq++;
-//             if (pos < seqLen)   // not to write the adjacent memory in case seqLen % 21 == 0
-//                 *cseq = 0;
-//         }
-//     }
-//     if (i > 0)
-//     {
-//         *cseq <<= (3*(21-i));
-//     }
-// }
-/**********************************************/
-// void decompressSequence(CompressedSeq *cseq, int seqLen, char *seq)
-// {
-//     int i;
-//     int shifts = 20*3;
-
-//     for (i = 0; i < seqLen; i++)
-//     {
-//         *(seq++) = _common_nRevVal[((*cseq) >> shifts) & 7];
-//         shifts -= 3;
-//         if (shifts < 0)
-//         {
-//                 cseq++;
-//                 shifts = 20*3;
-//         }
-//     }
-//     *seq = '\0';
-// }
-/**********************************************/
-// int hashVal(char *seq)
-// {
-//     int i=0;
-//     int val=0, numericVal=0;
-
-//     while(i < MIN_ANCHOR_LEN)
-//     {
-//         if (nHVal[seq[i]] == -1)
-//             return -1; 
-//         val = (val << 2) | nHVal[seq[i++]]; 
-//     }
-//     return val;
-// }
-/**********************************************/
-// void initCommon()
-// {
-//     memset(nVal, 4, 128);
-//     nVal['A']=0;
-//     nVal['C']=1;
-//     nVal['G']=2;
-//     nVal['T']=3;
-
-//     memset(nRev, 'N', 128);
-//     nRev['A']='T';
-//     nRev['C']='G';
-//     nRev['T']='A';
-//     nRev['G']='C';
-
-//     memset(nHVal, -1, 128);
-//     nHVal['A']=0;
-//     nHVal['C']=1;
-//     nHVal['G']=2;
-//     nHVal['T']=3;
-
-//     _common_nRevVal[0] = 'A';
-//     _common_nRevVal[1] = 'C';
-//     _common_nRevVal[2] = 'G';
-//     _common_nRevVal[3] = 'T';
-//     _common_nRevVal[4] = 'N';
-// }
-/**********************************************/
-// void reverseInPlace(char *dest, char *src, int len)
-// {
-//     int i;
-//     src+=len-1;
-//     for (i=0; i<len; i++)
-//     {
-//         *(dest++)=*(src--);
-//     }
-//     *dest='\0';
-//     // dest[len]='\0';
-// }
