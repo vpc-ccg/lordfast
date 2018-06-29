@@ -1037,7 +1037,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             }
             for(i = 0; i < map.samList.size() - 1; i++)
             {
-                uint32_t diff = abs(map.samList[i+1].pos - map.samList[i].posEnd) + abs(map.samList[i+1].qStart - map.samList[i].qEnd);
+                uint32_t diff = abs((int64_t)map.samList[i+1].pos - (int64_t)map.samList[i].posEnd) + abs((int64_t)map.samList[i+1].qStart - (int64_t)map.samList[i].qEnd);
                 // fprintf(stderr, "diff: %u\n", diff);
                 map.totalScore -= gapPenalty * diff;
                 // if(diff > 1) map.totalScore -= (25 * log(diff));
@@ -1120,7 +1120,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             }
             for(i = 0; i < map.samList.size() - 1; i++)
             {
-                uint32_t diff = abs(map.samList[i+1].pos - map.samList[i].posEnd) + abs(map.samList[i+1].qStart - map.samList[i].qEnd);
+                uint32_t diff = abs((int64_t)map.samList[i+1].pos - (int64_t)map.samList[i].posEnd) + abs((int64_t)map.samList[i+1].qStart - (int64_t)map.samList[i].qEnd);
                 // fprintf(stderr, "diff: %u\n", diff);
                 map.totalScore -= 0.15 * diff;
                 // if(diff > 1) map.totalScore -= (25 * log(diff));
