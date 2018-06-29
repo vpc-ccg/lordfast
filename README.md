@@ -20,6 +20,8 @@ Now the code can be compiled easily by running `make` command line which builds 
     lordfast --search FILE --seq FILE [OPTIONS]
 
 ### OPTIONS
+Run `lordfast -h` or `man ./HELP.man` to see available options.
+
 #### Indexing options
     -I, --index STR
         Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
