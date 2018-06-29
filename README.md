@@ -21,7 +21,6 @@ Now the code can be compiled easily by running `make` command line which builds 
 
 ### OPTIONS
 #### Indexing options
-
     -I, --index STR
         Path to the reference genome file in FASTA format which is supposed to be indexed. [required]
 
@@ -29,18 +28,36 @@ Now the code can be compiled easily by running `make` command line which builds 
     -S, --search STR
         Path to the reference genome file in FASTA format. [required]
 
-    -k, --minAnchorLen INT
-        Minimum required length of anchors to be considered. [14]
+    -s, --seq STR
+        Path to the file containing read sequences in FASTA/FASTQ format. [required]
 
     -o, --out STR
         Write output to STR file rather than standard output. [stdout]
 
-    -m, --maxRefHit INT
-        Ignore anchoring positions with more than INT reference matches. [1000]
-
     -t, --threads INT
-        The number of cores for mapping the sequences.
-        Pass 0 to use all the available cores in the system. [1]
+        Use INT number of CPU cores. Pass 0 to use all the available cores. [1]
+
+#### Advanced options
+    -k, --minAnchorLen INT
+        Minimum required length of anchors to be considered. [14]
+
+    -n, --numMap INT
+        Perform alignment for at most INT candidates. [10]
+
+    -l, --minReadLen INT
+        Do not try to map any read shorter than INT bp and report them as unmapped. [1000]
+
+    -c, --anchorCount INT
+        Consider INT anchoring positions on the long read. [1000]
+
+    -m, --maxRefHit INT
+        Ignore anchoring positions with more than INT reference hits. [1000]
+
+    -a, --chainAlg INT
+        Chaining algorithm to use. Options are "dp-n2" and "clasp". [dp-n2]
+
+    --noSamHeader
+        Do not print sam header in the output.
 
 #### Other options
     -h, --help
