@@ -44,13 +44,13 @@ double                  chainPenalty = 11.4;
 double                  gapPenalty = 0.15;
 long long               memUsage = 0;
 
-unsigned int            THREAD_COUNT = 1;
+int                     THREAD_COUNT = 1;
 int                     THREAD_ID[255];
-unsigned char           MIN_ANCHOR_LEN = 14;
-unsigned int            SAMPLING_COUNT = 1000;
-unsigned int            MAX_MAP = 10;
-unsigned int            MIN_READ_LEN = 1000;
-unsigned int            MAX_REF_HITS = 1000;
+int                     MIN_ANCHOR_LEN = 14;
+int                     SAMPLING_COUNT = 1000;
+int                     MAX_MAP = 10;
+int                     MIN_READ_LEN = 1000;
+int                     MAX_REF_HITS = 1000;
 
 #if (defined(__MACH__) && defined(__APPLE__))
 #include <mach-o/getsect.h>
@@ -124,7 +124,7 @@ int parseCommandLine (int argc, char *argv[])
                 break;
             case 't':
                 THREAD_COUNT = atoi(optarg);
-                if (THREAD_COUNT == 0 || THREAD_COUNT > sysconf( _SC_NPROCESSORS_ONLN ))
+                if (THREAD_COUNT <= 0 || THREAD_COUNT > sysconf( _SC_NPROCESSORS_ONLN ))
                     THREAD_COUNT = sysconf( _SC_NPROCESSORS_ONLN );
                 break;
             case 'k':
@@ -135,6 +135,7 @@ int parseCommandLine (int argc, char *argv[])
                 break;
             case 'l':
                 MIN_READ_LEN = atoi(optarg);
+                if(MIN_READ_LEN < 100) MIN_READ_LEN = 100;
                 break;
             case 'c':
                 SAMPLING_COUNT = atoi(optarg);
@@ -186,21 +187,11 @@ int parseCommandLine (int argc, char *argv[])
         return 1;
     }
 
-    if (MIN_ANCHOR_LEN > 20 || MIN_ANCHOR_LEN < 10)
+    if ( indexingMode && refFile == NULL )
     {
-        fprintf(stderr, "[ERROR] (parseCommandLine) mininum anchor length should be in [10..20]\n");
+        fprintf(stderr, "[ERROR] (parseCommandLine) reference file should be indicated for indexing\n");
         return 1;
     }
-
-    if ( indexingMode )
-    {
-        if (refFile == NULL)
-        {
-            fprintf(stderr, "[ERROR] (parseCommandLine) reference file should be indicated for indexing\n");
-            return 1;
-        }
-    }
-
     if ( searchingMode )
     {
         if (refFile == NULL)
@@ -208,12 +199,32 @@ int parseCommandLine (int argc, char *argv[])
             fprintf(stderr, "[ERROR] (parseCommandLine) reference file should be indiciated for searching\n");
             return 1;
         }
-
         if (seqFile == NULL)
         {
             fprintf(stderr, "[ERROR] (parseCommandLine) please indicate a sequence file for searching.\n");
             return 1;
         }
+    }
+
+    if (MIN_ANCHOR_LEN < 10 || MIN_ANCHOR_LEN > 20)
+    {
+        fprintf(stderr, "[ERROR] (parseCommandLine) -k/--minAnchorLen requires an argument in [10..20]\n");
+        return 1;
+    }
+    if(SAMPLING_COUNT <= 0)
+    {
+        fprintf(stderr, "[ERROR] (parseCommandLine) -c/--anchorCount requires a positive integer argument\n");
+        return 1;
+    }
+    if(MAX_MAP <= 0)
+    {
+        fprintf(stderr, "[ERROR] (parseCommandLine) -n/--numMap requires a positive integer argument\n");
+        return 1;
+    }
+    if(MAX_REF_HITS <= 0)
+    {
+        fprintf(stderr, "[ERROR] (parseCommandLine) -m/--maxRefHit requires a positive integer argument\n");
+        return 1;
     }
 
     if (!indexingMode)

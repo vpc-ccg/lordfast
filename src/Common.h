@@ -70,13 +70,13 @@ extern double           chainPenalty;
 extern double           gapPenalty;
 extern long long        memUsage;
 
-extern unsigned int     THREAD_COUNT;
+extern int              THREAD_COUNT;
 extern int              THREAD_ID[255];
-extern unsigned char    MIN_ANCHOR_LEN;     // minimum anchor length for searching
-extern unsigned int     SAMPLING_COUNT;     // number of anchoring positions
-extern unsigned int     MAX_MAP;
-extern unsigned int     MIN_READ_LEN;
-extern unsigned int     MAX_REF_HITS;
+extern int              MIN_ANCHOR_LEN;     // minimum anchor length for searching
+extern int              SAMPLING_COUNT;     // number of anchoring positions
+extern int              MAX_MAP;
+extern int              MIN_READ_LEN;
+extern int              MAX_REF_HITS;
 
 gzFile  fileOpenGZ(char *fileName, const char *mode);
 void    reverseComplement(char *seq, char *rcSeq , int length);
