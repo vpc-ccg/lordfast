@@ -19,7 +19,7 @@ BWADIR      := $(LIBDIR)/bwa
 EDLIBDIR    := $(LIBDIR)/edlib
 
 INCS        := -I$(CLASPDIR) -I$(BWADIR) -I$(EDLIBDIR)
-LIBS        := -lz -lm -lpthread
+LIBS        := -lz -lpthread
 CFLAGS      := -w -fno-pic
 CXXFLAGS    := -w -fno-pic -DPROG_VERSION=\"$(PROG_VERSION)\" $(INCS)
 LDFLAGS     := #-static
