@@ -7,7 +7,7 @@ log2: LOG2_FLAG OPTIMIZE_FLAGS build
 log3: LOG3_FLAG OPTIMIZE_FLAGS build
 debug: DEBUG_FLAGS build
 profile: PROFILE_FLAGS build
-build: clean-exe SSE_FLAGS clasplib bwalib lordfast clean
+build: clean-exe clasplib bwalib lordfast clean
 
 CC          ?= gcc
 CXX         ?= g++
@@ -94,23 +94,3 @@ PROFILE_FLAGS:
 	$(eval CXXFLAGS = $(CXXFLAGS) -pg -g)
 	$(eval LIBS = $(LIBS) -pg -g)
 
-SSE_FLAGS:
-ifeq ($(shell uname -s),Linux)
-ifeq ($(with-sse4),no)
-		$(shell echo "-DSSE4=0")
-else
-        	$(eval CXXFLAGS = $(CXXFLAGS) \
-        	$(shell gv=`gcc -dumpversion`; \
-            	    sc=`grep -c "sse4" /proc/cpuinfo`; \
-                	echo $$sc.$$gv | awk -F. '{if($$1>0 && ($$2>=4 || ($$2>=4 && $$3>=4))) print "-DSSE4=1 -msse4.2"; else print "-DSSE4=0"}'))
-endif
-else
-ifeq ($(with-sse4),no)
-		$(shell echo "-DSSE4=0")
-else
-        $(eval CXXFLAGS = $(CXXFLAGS) \
-        $(shell gv=`gcc -dumpversion`; \
-                sc=`sysctl -n machdep.cpu.features | grep -c "SSE4"` ;\
-                echo $$sc.$$gv | awk -F. '{if($$1>0 && ($$2>=4 || ($$2>=4 && $$3>=4))) print "-DSSE4=1 -msse4.2"; else print "-DSSE4=0"}'))
-endif
-endif
