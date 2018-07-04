@@ -4,6 +4,9 @@ lordFAST is a sensitive tool for mapping long reads with high error rates.
 lordFAST is specially designed for aligning reads from PacBio sequencing technology but provides the  user  the ability to change alignment parameters depending on the reads and application.
 
 ## How to install?
+
+[![Build Status](https://travis-ci.org/vpc-ccg/lordfast.svg?branch=master)](https://travis-ci.org/vpc-ccg/lordfast)
+
 ### Requirements
 - GCC ≥ 4.4.7
 - zlib
