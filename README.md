@@ -86,6 +86,9 @@ Run `lordfast -h` or `man ./HELP.man` to see available options.
     $ ./lordfast --search refgen.fa --seq reads.fastq > map.sam
     $ ./lordfast --search refgen.fa --seq reads.fastq --threads 4 > map.sam
 
+## Publication
+*Haghshenas E., Sahinalp S.C. and Hach F.*, "lordFAST: sensitive and Fast Alignment Search Tool for LOng noisy Read sequencing Data" Bioinformatics (2018) DOI: [10.1093/bioinformatics/bty544](https://doi.org/10.1093/bioinformatics/bty544)
+
 ## Bugs
 Please report the bugs through lordFAST's issues page at [https://github.com/vpc-ccg/lordfast/issues](https://github.com/vpc-ccg/lordfast/issues).
 
