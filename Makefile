@@ -20,8 +20,8 @@ EDLIBDIR    := $(LIBDIR)/edlib
 
 INCS        := -I$(CLASPDIR) -I$(BWADIR) -I$(EDLIBDIR)
 LIBS        := -lz -lpthread
-CFLAGS      := -w -fno-pic
-CXXFLAGS    := -w -fno-pic -DPROG_VERSION=\"$(PROG_VERSION)\" $(INCS)
+CFLAGS      := -w
+CXXFLAGS    := -w -DPROG_VERSION=\"$(PROG_VERSION)\" $(INCS)
 LDFLAGS     := #-static
 
 LORDFASTOBJ   = $(SRCDIR)/baseFAST.o \
@@ -42,7 +42,7 @@ lordfast: $(LORDFASTOBJ)
 ifeq ($(shell uname -s),Linux)
 	$(CXX) -w $(LORDFASTOBJ) $(BWAOBJ) $(CLASPOBJ) -o $@ ${LDFLAGS} ${LIBS}
 else
-	$(CXX) -Wl,-no_pie -fno-pic -w $(LORDFASTOBJ) $(BWAOBJ) $(CLASPOBJ) -o $@ ${LDFLAGS} ${LIBS}
+	$(CXX) -Wl,-no_pie -w $(LORDFASTOBJ) $(BWAOBJ) $(CLASPOBJ) -o $@ ${LDFLAGS} ${LIBS}
 endif
 
 clasplib: 
