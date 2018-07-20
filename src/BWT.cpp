@@ -673,5 +673,9 @@ void printSamHeader(FILE *fp)
     {
         fprintf(fp, "@SQ\tSN:%s\tLN:%d\n", _fmd_index->bns->anns[i].name, _fmd_index->bns->anns[i].len);
     }
+    if(strlen(readGroupId) > 0)
+    {
+        fprintf(fp, "%s\n", readGroup);
+    }
     fprintf(fp, "@PG\tID:lordfast\tPN:lordfast\tVN:%s\tCL:%s\n", PROG_VERSION, opt_commandAll);
 }

@@ -39,6 +39,8 @@ char                    outputMap[1000];
 char                    opt_commandAll[2000];
 int                     opt_outputBufferSize = 2000000;
 chainAlg_t              chainAlg = CHAIN_ALG_DPN2;
+char                    readGroup[1000];
+char                    readGroupId[1000];
 double                  chainReward = 9.3;
 double                  chainPenalty = 11.4;
 double                  gapPenalty = 0.15;
@@ -73,6 +75,47 @@ void printHelp()
 #endif
 }
 
+int set_read_group(char *rg_line)
+{
+    char *p, *q;
+    if(strstr(rg_line, "@RG") != rg_line)
+    {
+        fprintf(stderr, "[ERROR] SAM read group line does not start with @RG\n");
+        return 1;
+    }
+    if(strstr(rg_line, "\t") != NULL)
+    {
+        fprintf(stderr, "[ERROR] the read group line contained literal <tab> characters. Please replace with escaped tabs: \\t\n");
+        return 1;
+    }
+    // convert escape characters
+    for(p = rg_line, q = readGroup; *p; p++)
+    {
+        if(*p != '\\')
+        {
+            *q++ = *p;
+        }
+        else
+        {
+            p++;
+            if(*p == 't') *q++ = '\t';
+            else if(*p == 'n') *q++ = '\n';
+            else if(*p == 'r') *q++ = '\r';
+            else if(*p == '\\') *q++ = '\\';
+        }
+    }
+    *q = '\0';
+    // find the read group id
+    if((p = strstr(readGroup, "ID:")) == 0)
+    {
+        fprintf(stderr, "[ERROR] no ID within the read group line\n");
+        return 1;
+    }
+    // copy the read group id
+    for(p = p+3, q = readGroupId; *p && *p != '\n' && *p != '\t'; ) *q++ = *p++;
+    return 0;
+}
+
 int parseCommandLine (int argc, char *argv[])
 {
     int i;
@@ -91,17 +134,18 @@ int parseCommandLine (int argc, char *argv[])
         {"anchorCount",             required_argument,  0,                  'c'},
         {"numMap",                  required_argument,  0,                  'n'},
         {"chainAlg",                required_argument,  0,                  'a'},
+        {"readGroup",               required_argument,  0,                  'R'},
         {"noSamHeader",             no_argument,        &noSamHeader,         1},
         // {"affine",                  no_argument,        &affineMode,        1},
-        {"chainReward",             required_argument,  0,                  'R'},
-        {"chainPenalty",            required_argument,  0,                  'P'},
-        {"gapPenalty",              required_argument,  0,                  'G'},
+        {"chainReward",             required_argument,  0,                  'r'},
+        {"chainPenalty",            required_argument,  0,                  'p'},
+        {"gapPenalty",              required_argument,  0,                  'g'},
         {"help",                    no_argument,        0,                  'h'},
         {"version",                 no_argument,        0,                  'v'},
         {0,0,0,0}
     };
 
-    while ( (ch = getopt_long ( argc, argv, "I:S:s:o:t:k:m:l:c:n:a:R:P:G:hv", longOptions, &index))!= -1 )
+    while ( (ch = getopt_long ( argc, argv, "I:S:s:o:t:k:m:l:c:n:a:r:R:P:G:hv", longOptions, &index))!= -1 )
     {
         switch (ch)
         {
@@ -159,12 +203,16 @@ int parseCommandLine (int argc, char *argv[])
                 }
                 break;
             case 'R':
+                if(set_read_group(optarg))
+                    return 1;
+                break;
+            case 'r':
                 chainReward = atof(optarg);
                 break;
-            case 'P':
+            case 'p':
                 chainPenalty = atof(optarg);
                 break;
-            case 'G':
+            case 'g':
                 gapPenalty = atof(optarg);
                 break;
             case 'h':

@@ -386,6 +386,8 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                         << "XS:i:" << 0 << "\t"
                         << "NM:i:" << abs(map.mappings[i].samList[j].nmCount) << "\t"
                         << "MD:Z:" << map.mappings[i].samList[j].md;
+                        if(strlen(readGroupId) > 0)
+                            sout<< "\tRG:Z:" << readGroupId;
                         if(map.mappings[i].samList.size() > 1) // has supplementary
                         {
                             sout<< "\tSA:Z:";
@@ -431,7 +433,10 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                         << "AS:i:" << map.mappings[i].samList[j].alnScore << "\t" 
                         << "XS:i:" << 0 << "\t"
                         << "NM:i:" << abs(map.mappings[i].samList[j].nmCount) << "\t"
-                        << "MD:Z:" << map.mappings[i].samList[j].md << "\n";
+                        << "MD:Z:" << map.mappings[i].samList[j].md;
+                        if(strlen(readGroupId) > 0)
+                            sout<< "\tRG:Z:" << readGroupId;
+                        sout<< "\n";
                         // << "TS:i:" << map.mappings[i].totalScore << "\t"
                         // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
                         // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";

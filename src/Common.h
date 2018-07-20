@@ -65,6 +65,8 @@ extern char             outputMap[1000];
 extern char             opt_commandAll[2000];
 extern int              opt_outputBufferSize;
 extern chainAlg_t       chainAlg;
+extern char             readGroup[1000];
+extern char             readGroupId[1000];
 extern double           chainReward;
 extern double           chainPenalty;
 extern double           gapPenalty;
