@@ -91,7 +91,7 @@ int parseCommandLine (int argc, char *argv[])
         {"anchorCount",             required_argument,  0,                  'c'},
         {"numMap",                  required_argument,  0,                  'n'},
         {"chainAlg",                required_argument,  0,                  'a'},
-        {"noSamHeader",             no_argument,        &noSamHeader,       1},
+        {"noSamHeader",             no_argument,        &noSamHeader,         1},
         // {"affine",                  no_argument,        &affineMode,        1},
         {"chainReward",             required_argument,  0,                  'R'},
         {"chainPenalty",            required_argument,  0,                  'P'},

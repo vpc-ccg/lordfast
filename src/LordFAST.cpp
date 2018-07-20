@@ -374,12 +374,15 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
 
                 for(j = 0; j < map.mappings[i].samList.size(); j++)
                 {
-                    sout<< map.qName << "\t" << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" 
-                        << map.mappings[i].samList[j].rName << "\t" << map.mappings[i].samList[j].rStart + 1 << "\t" 
-                        << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" 
-                        << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
-                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
-                        << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
+                    sout<< map.qName << "\t" // QNAME
+                        << (j > 0 ? (map.mappings[i].samList[j].flag | 2048) : map.mappings[i].samList[j].flag) << "\t" // FLAG
+                        << map.mappings[i].samList[j].rName << "\t" // RNAME
+                        << map.mappings[i].samList[j].rStart + 1 << "\t" // POS
+                        << (mapq_int >= 0 ? mapq_int : 0) << "\t" // MAPQ
+                        << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" // CIGAR, RNEXT, PNEXT, TLEN
+                        << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" // SEQ
+                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" // QUAL
+                        << "AS:i:" << map.mappings[i].samList[j].alnScore << "\t" 
                         << "XS:i:" << 0 << "\t"
                         << "NM:i:" << abs(map.mappings[i].samList[j].nmCount) << "\t"
                         << "MD:Z:" << map.mappings[i].samList[j].md;
@@ -406,32 +409,35 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
                     << map.seq << "\t" << map.qual << "\n";
             }
         }
-        // else
-        // {
-        //     if(map.mappings[i].samList.size() > 0) // mapped
-        //     {
-        //         //
-        //         mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
-        //         //
-        //         for(j = 0; j < map.mappings[i].samList.size(); j++)
-        //         {
-        //             map.mappings[i].samList[j].flag = map.mappings[i].samList[j].flag | 256;
-        //             bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
-        //             //
-        //             sout<< map.qName << "\t" << map.mappings[i].samList[j].flag << "\t" << chrName << "\t" << chrBeg + 1 
-        //                 << "\t" << (mapq_int >= 0 ? mapq_int : 0) << "\t" << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" 
-        //                 << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" 
-        //                 << "AS:i:" << map.mappings[i].samList[j].alnScore /*+ readLen*/ << "\t" 
-        //                 << "XS:i:" << 0 << "\t"
-        //                 << "NM:i:" << abs(map.mappings[i].samList[j].nmCount) << "\t"
-        //                 << "MD:Z:" << map.mappings[i].samList[j].md << "\n";
-        //                 // << "XS:i:" << 0 << "\t"
-        //                 // << "TS:i:" << map.mappings[i].totalScore << "\t"
-        //                 // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
-        //                 // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
-        //         }
-        //     }
-        // }
+        else
+        {
+            if(map.mappings[i].samList.size() > 0) // mapped
+            {
+                //
+                mapq_int = mapq + 5 * (0.2 - (double)(-1*map.mappings[i].totalScore)/readLen) / 0.2;
+                //
+                for(j = 0; j < map.mappings[i].samList.size(); j++)
+                {
+                    bwt_get_intv_info(map.mappings[i].samList[j].pos, map.mappings[i].samList[j].posEnd, &chrName, &chrLen, &chrBeg, &chrEnd);
+                    //
+                    sout<< map.qName << "\t" // QNAME
+                        << (map.mappings[i].samList[j].flag | 256)  << "\t" // FLAG
+                        << chrName << "\t" // RNAME
+                        << chrBeg + 1 << "\t" // POS
+                        << (mapq_int >= 0 ? mapq_int : 0) << "\t" // MAPQ
+                        << map.mappings[i].samList[j].cigar << "\t*\t0\t0\t" // CIGAR, RNEXT, PNEXT, TLEN
+                        << (map.mappings[i].samList[j].flag & 16 ? map.seq_rev : map.seq) << "\t" // SEQ
+                        << (map.mappings[i].samList[j].flag & 16 ? map.qual_rev : map.qual) << "\t" // QUAL
+                        << "AS:i:" << map.mappings[i].samList[j].alnScore << "\t" 
+                        << "XS:i:" << 0 << "\t"
+                        << "NM:i:" << abs(map.mappings[i].samList[j].nmCount) << "\t"
+                        << "MD:Z:" << map.mappings[i].samList[j].md << "\n";
+                        // << "TS:i:" << map.mappings[i].totalScore << "\t"
+                        // << "QS:i:" << map.mappings[i].samList[j].qStart << "\t"
+                        // << "QE:i:" << map.mappings[i].samList[j].qEnd << "\n";
+                }
+            }
+        }
     }
     //
     if(sout.tellp() > opt_outputBufferSize)
