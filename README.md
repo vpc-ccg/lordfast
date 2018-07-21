@@ -63,7 +63,7 @@ Run `lordfast -h` or `man ./HELP.man` to see available options.
         Ignore anchoring positions with more than INT reference hits. [1000]
 
     -R, --readGroup STR
-        SAM read group line in a format like '@RG\tID:foo\tSM:bar' []
+        SAM read group line in a format like '@RG\tID:foo\tSM:bar'. []
 
     -a, --chainAlg INT
         Chaining algorithm to use. Options are "dp-n2" and "clasp". [dp-n2]
