@@ -76,6 +76,9 @@ Ignore anchoring positions with more than
 .I INT
 reference hits. [1000]
 .TP
+.BI "-R, --readGroup " STR
+SAM read group line in a format like '@RG\tID:foo\tSM:bar'. []
+.TP
 .BI "-a, --chainAlg " INT
 Chaining algorithm to use. Options are "dp-n2" and "clasp". [dp-n2]
 .TP
