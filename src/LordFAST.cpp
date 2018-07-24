@@ -408,7 +408,10 @@ void printSamEntry(MapInfo &map, int readLen, int num, std::ostringstream& sout)
             else // un-mapped
             {
                 sout<< map.qName  << "\t4\t*\t0\t0\t*\t*\t0\t0\t" 
-                    << map.seq << "\t" << map.qual << "\n";
+                    << map.seq << "\t" << map.qual;
+                if(strlen(readGroupId) > 0)
+                    sout<< "\tRG:Z:" << readGroupId;
+                sout << "\n";
             }
         }
         else
