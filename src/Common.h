@@ -48,7 +48,7 @@
 #define LOG3(cmd) cmd
 #endif
 
-#define SEQ_MAX_LENGTH      50000       // maximum sequence length
+#define SEQ_MAX_LENGTH      100000       // maximum sequence length
 
 typedef uint64_t CompressedSeq;
 typedef uint16_t CheckSumType;
