@@ -7,9 +7,13 @@ lordfast
 lordFAST is a sensitive tool for mapping long reads with high error rates. lordFAST is specially designed for aligning reads from PacBio sequencing technology but provides the user the ability to change alignment parameters depending on the reads and application.
 
 .SH INSTALLATION
-To install lordFAST, please download the source code from 
+lordFast can be installed using conda package manager (via bioconda channel) using the following command:
 .br
-https://github.com/vpc-ccg/lordfast
+$ conda install -c bioconda lordfast
+
+In order to build from source, please download the latest release from 
+.br
+https://github.com/vpc-ccg/lordfast/releases
 .br
 or alternatively clone the repository by running the following command:
 .br
