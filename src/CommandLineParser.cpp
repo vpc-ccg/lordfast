@@ -75,6 +75,13 @@ void printHelp()
 #endif
 }
 
+void printHelp_short()
+{
+    fprintf(stderr, "usage: lordfast --index ref.fa\n");
+    fprintf(stderr, "       lordfast --search ref.fa --seq reads.fa [options]\n");
+    fprintf(stderr, "For more details and command line options run \"lordfast --help\"\n");
+}
+
 int set_read_group(char *rg_line)
 {
     char *p, *q;
@@ -118,6 +125,11 @@ int set_read_group(char *rg_line)
 
 int parseCommandLine (int argc, char *argv[])
 {
+    if(argc < 2)
+    {
+        printHelp_short();
+        return 1;
+    }
     int i;
     int index, ch;
 
@@ -224,6 +236,7 @@ int parseCommandLine (int argc, char *argv[])
                 exit(EXIT_SUCCESS);
                 break;
             default:
+                printHelp_short();
                 return 1;
         }
 
@@ -232,12 +245,14 @@ int parseCommandLine (int argc, char *argv[])
     if (indexingMode + searchingMode != 1)
     {
         fprintf(stderr, "[ERROR] (parseCommandLine) indexing / searching mode should be selected\n");
+        printHelp_short();
         return 1;
     }
 
     if ( indexingMode && refFile == NULL )
     {
         fprintf(stderr, "[ERROR] (parseCommandLine) reference file should be indicated for indexing\n");
+        printHelp_short();
         return 1;
     }
     if ( searchingMode )
@@ -245,16 +260,18 @@ int parseCommandLine (int argc, char *argv[])
         if (refFile == NULL)
         {
             fprintf(stderr, "[ERROR] (parseCommandLine) reference file should be indiciated for searching\n");
+            printHelp_short();
             return 1;
         }
         if (seqFile == NULL)
         {
             fprintf(stderr, "[ERROR] (parseCommandLine) please indicate a sequence file for searching.\n");
+            printHelp_short();
             return 1;
         }
     }
 
-    if (MIN_ANCHOR_LEN < 10 || MIN_ANCHOR_LEN > 20)
+    if (MIN_ANCHOR_LEN < 12 || MIN_ANCHOR_LEN > 20)
     {
         fprintf(stderr, "[ERROR] (parseCommandLine) -k/--minAnchorLen requires an argument in [10..20]\n");
         return 1;
