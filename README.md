@@ -11,7 +11,13 @@ lordFAST is specially designed for aligning reads from PacBio sequencing technol
 - GCC ≥ 4.4.7
 - zlib
 
-In order to install lordFAST, please download the source code from [https://github.com/vpc-ccg/lordfast](https://github.com/vpc-ccg/lordfast) or alternatively clone the repository by running the following command:
+### Using conda
+lordFast can be installed using [conda](https://conda.io) package manager via [bioconda](https://bioconda.github.io) channel:
+
+    $ conda install -c bioconda lordfast
+
+### From source code
+In order to build lordFAST, please download the source code from [https://github.com/vpc-ccg/lordfast](https://github.com/vpc-ccg/lordfast) or alternatively clone the repository by running the following command:
 
     $ git clone https://github.com/vpc-ccg/lordfast.git
 Now the code can be compiled easily by running `make` command line which builds the binary file `lordfast`.
