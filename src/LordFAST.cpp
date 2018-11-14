@@ -648,9 +648,13 @@ void findTopWins_coarse(uint32_t read_len, SeedList *seeds, int isRev, int readI
 float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isReverse, int id)
 {
     uint32_t i;
-    uint32_t margin = rLen >> 1;
-    int64_t seedPos_Low = (int64_t)tStart - margin;
-    int64_t seedPos_High = (int64_t)tEnd + margin;
+    uint32_t margin = rLen >> 1; // half of the read length
+    uint32_t chrBeg, chrEnd;
+    bwt_get_chr_boundaries(tStart, tEnd, &chrBeg, &chrEnd);
+    int64_t seedPos_low = ((int64_t)tStart - (int64_t)margin > (int64_t)chrBeg ? (int64_t)tStart - (int64_t)margin : (int64_t)chrBeg);
+    int64_t seedPos_high = ((int64_t)tEnd + (int64_t)margin < (int64_t)chrEnd ? (int64_t)tEnd + (int64_t)margin : (int64_t)chrEnd);
+    // int64_t seedPos_low = (int64_t)tStart - margin;
+    // int64_t seedPos_high = (int64_t)tEnd + margin;
     float retScore;
 
     if(isReverse)
@@ -658,7 +662,7 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
         _pf_seedsSelected[id].num = 0;
         for(i = 0; i < _pf_seedsReverse[id].num; i++)
         {
-            if((int64_t)_pf_seedsReverse[id].list[i].tPos >= seedPos_Low && (int64_t)_pf_seedsReverse[id].list[i].tPos <= seedPos_High)
+            if((int64_t)_pf_seedsReverse[id].list[i].tPos >= seedPos_low && (int64_t)_pf_seedsReverse[id].list[i].tPos <= seedPos_high)
             {
                 _pf_seedsSelected[id].list[_pf_seedsSelected[id].num++] = _pf_seedsReverse[id].list[i];
             }
@@ -666,13 +670,13 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 
         if(chainAlg == CHAIN_ALG_CLASP)
         {
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_seedsSelected[id].num; i++)
                     _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
             
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
                     _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
         }
@@ -688,7 +692,7 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
         _pf_seedsSelected[id].num = 0;
         for(i = 0; i < _pf_seedsForward[id].num; i++)
         {
-            if((int64_t)_pf_seedsForward[id].list[i].tPos >= seedPos_Low && (int64_t)_pf_seedsForward[id].list[i].tPos <= seedPos_High)
+            if((int64_t)_pf_seedsForward[id].list[i].tPos >= seedPos_low && (int64_t)_pf_seedsForward[id].list[i].tPos <= seedPos_high)
             {
                 _pf_seedsSelected[id].list[_pf_seedsSelected[id].num++] = _pf_seedsForward[id].list[i];
             }
@@ -696,13 +700,13 @@ float calcChainScore(uint32_t rLen, uint32_t tStart, uint32_t tEnd, int isRevers
 
         if(chainAlg == CHAIN_ALG_CLASP)
         {
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_seedsSelected[id].num; i++)
                     _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
                     _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
         }
@@ -980,9 +984,13 @@ bool compareSam(const SamList_t& s1, const SamList_t& s2)
 void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qual, char* qual_rev, SamList_t &map, int id)
 {
     uint32_t i;
-    uint32_t margin = rLen >> 1;
-    int64_t seedPos_Low = (int64_t)win.tStart - margin;
-    int64_t seedPos_High = (int64_t)win.tEnd + margin;
+    uint32_t margin = rLen >> 1; // half of the read length
+    uint32_t chrBeg, chrEnd;
+    bwt_get_chr_boundaries(win.tStart, win.tEnd, &chrBeg, &chrEnd);
+    int64_t seedPos_low = ((int64_t)win.tStart - (int64_t)margin > (int64_t)chrBeg ? (int64_t)win.tStart - (int64_t)margin : (int64_t)chrBeg);
+    int64_t seedPos_high = ((int64_t)win.tEnd + (int64_t)margin < (int64_t)chrEnd ? (int64_t)win.tEnd + (int64_t)margin : (int64_t)chrEnd);
+    // int64_t seedPos_low = (int64_t)win.tStart - margin;
+    // int64_t seedPos_high = (int64_t)win.tEnd + margin;
 
     if(win.isReverse)
     {
@@ -992,7 +1000,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         _pf_seedsSelected[id].num = 0;
         for(i = 0; i < _pf_seedsReverse[id].num; i++)
         {
-            if((int64_t)_pf_seedsReverse[id].list[i].tPos >= seedPos_Low && (int64_t)_pf_seedsReverse[id].list[i].tPos <= seedPos_High)
+            if((int64_t)_pf_seedsReverse[id].list[i].tPos >= seedPos_low && (int64_t)_pf_seedsReverse[id].list[i].tPos <= seedPos_high)
             {
                 _pf_seedsSelected[id].list[_pf_seedsSelected[id].num++] = _pf_seedsReverse[id].list[i];
             }
@@ -1008,7 +1016,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 
         if(chainAlg == CHAIN_ALG_CLASP)
         {
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_seedsSelected[id].num; i++)
                     _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
@@ -1021,7 +1029,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
                     (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
 
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
                     _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
         }
@@ -1075,7 +1083,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
         _pf_seedsSelected[id].num = 0;
         for(i = 0; i < _pf_seedsForward[id].num; i++)
         {
-            if((int64_t)_pf_seedsForward[id].list[i].tPos >= seedPos_Low && (int64_t)_pf_seedsForward[id].list[i].tPos <= seedPos_High)
+            if((int64_t)_pf_seedsForward[id].list[i].tPos >= seedPos_low && (int64_t)_pf_seedsForward[id].list[i].tPos <= seedPos_high)
             {
                 _pf_seedsSelected[id].list[_pf_seedsSelected[id].num++] = _pf_seedsForward[id].list[i];
             }
@@ -1091,7 +1099,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
 
         if(chainAlg == CHAIN_ALG_CLASP)
         {
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_seedsSelected[id].num; i++)
                     _pf_seedsSelected[id].list[i].tPos -= 2000000000;
 
@@ -1104,7 +1112,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
                     (win.isReverse ? '-' : '+'), _pf_topChains[id].list[0].chainLen, _pf_topChains[id].list[0].score);
             });
 
-            if(seedPos_Low > 2000000000)
+            if(seedPos_low > 2000000000)
                 for(i = 0; i < _pf_topChains[id].list[0].chainLen; i++)
                     _pf_topChains[id].list[0].seeds[i].tPos += 2000000000;
         }
