@@ -17,7 +17,7 @@ lordFast can be installed using [conda](https://conda.io) package manager via [b
     $ conda install -c bioconda lordfast
 
 ### From source code
-In order to build lordFAST, please download the source code from [https://github.com/vpc-ccg/lordfast](https://github.com/vpc-ccg/lordfast) or alternatively clone the repository by running the following command:
+In order to build lordFAST, please download the latest release from [https://github.com/vpc-ccg/lordfast/releases](https://github.com/vpc-ccg/lordfast/releases) or alternatively clone the repository by running the following command:
 
     $ git clone https://github.com/vpc-ccg/lordfast.git
 Now the code can be compiled easily by running `make` command line which builds the binary file `lordfast`.
