@@ -39,9 +39,9 @@ BWAOBJ       = $(BWADIR)/*.o
 
 lordfast: $(LORDFASTOBJ)
 ifeq ($(shell uname -s),Linux)
-	$(CXX) -w $(LORDFASTOBJ) $(BWAOBJ) $(CLASPOBJ) -o $@ ${LIBS}
+	$(CXX) -w $(LORDFASTOBJ) $(BWAOBJ) $(CLASPOBJ) -o $@ ${LDFLAGS} ${LIBS}
 else
-	$(CXX) -Wl,-no_pie -w $(LORDFASTOBJ) $(BWAOBJ) $(CLASPOBJ) -o $@ ${LIBS}
+	$(CXX) -Wl,-no_pie -w $(LORDFASTOBJ) $(BWAOBJ) $(CLASPOBJ) -o $@ ${LDFLAGS} ${LIBS}
 endif
 
 clasplib: 
