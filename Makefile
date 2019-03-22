@@ -22,7 +22,6 @@ INCS        := -I$(CLASPDIR) -I$(BWADIR) -I$(EDLIBDIR)
 LIBS        := -lz -lpthread
 CFLAGS      := -w
 CXXFLAGS    := -w -DPROG_VERSION=\"$(PROG_VERSION)\" $(INCS)
-LDFLAGS     := #-static
 
 LORDFASTOBJ   = $(SRCDIR)/baseFAST.o \
                $(SRCDIR)/Common.o \
