@@ -273,7 +273,7 @@ int parseCommandLine (int argc, char *argv[])
 
     if (MIN_ANCHOR_LEN < 12 || MIN_ANCHOR_LEN > 20)
     {
-        fprintf(stderr, "[ERROR] (parseCommandLine) -k/--minAnchorLen requires an argument in [10..20]\n");
+        fprintf(stderr, "[ERROR] (parseCommandLine) -k/--minAnchorLen requires an argument in [12..20]\n");
         return 1;
     }
     if(SAMPLING_COUNT <= 0)
