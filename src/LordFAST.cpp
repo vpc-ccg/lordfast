@@ -513,6 +513,17 @@ void* mapSeq(void *idp)
         findTopWins_coarse(readLen, _pf_seedsForward + id, 0, t+1, id); //find candidate paths for forward
         findTopWins_coarse(readLen, _pf_seedsReverse + id, 1, -(t+1), id); //find candidate paths for reverse
 
+        if(_pf_topWins[id].num == 0)
+        {
+            LOG1({
+                fprintf(stderr, "\tunmapped\tshortRead\n", read->name, readLen);
+            });
+
+            _pf_topMappings[id].mappings[0].samList.clear();
+            printSamEntry(_pf_topMappings[id], readLen, 1, outBuffer);
+            continue;
+        }
+
         // sort the windows based on the score!
         std::sort_heap(_pf_topWins[id].list, _pf_topWins[id].list + _pf_topWins[id].num, compareWin);
         
@@ -1023,6 +1034,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
+                if(_pf_topChains[id].list[0].chainLen > 0)
                 fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
                     _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
                     _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
@@ -1038,6 +1050,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
+                if(_pf_topChains[id].list[0].chainLen > 0)
                 fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
                     _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
                     _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
@@ -1106,6 +1119,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_clasp(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
+                if(_pf_topChains[id].list[0].chainLen > 0)
                 fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
                     _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
                     _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
@@ -1121,6 +1135,7 @@ void alignWin(Win_t &win, char *query, char *query_rev, uint32_t rLen, char *qua
             chain_seeds_n2(_pf_seedsSelected[id].list, _pf_seedsSelected[id].num, _pf_topChains[id].list[0]);
 
             LOG1({
+                if(_pf_topChains[id].list[0].chainLen > 0)
                 fprintf(stderr, "\tchain\tread: (%u, %u)\tref: (%u, %u)\t%c\tchainLen: %u\tchainScore: %f\n", 
                     _pf_topChains[id].list[0].seeds[0].qPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].qPos, 
                     _pf_topChains[id].list[0].seeds[0].tPos, _pf_topChains[id].list[0].seeds[_pf_topChains[id].list[0].chainLen - 1].tPos, 
